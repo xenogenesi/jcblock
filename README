@@ -1,0 +1,54 @@
+
+	Program: jcblock
+
+	Description:
+
+	A program to block telemarketing (junk) calls.
+	This program connects to a serial port modem and listens for
+	the caller ID string that is sent between the first and second
+	rings. It records the string in file callerID.dat. It then
+	reads strings from file blacklist.dat and scans them against
+	the caller ID string for a match. If it finds a match to a
+	string in the blacklist, it sends an off-hook command (ATH1)
+	to the modem, followed by an on-hook command (ATH0). This
+	terminates the junk call. The program also updates the date
+	field of the matching blacklist entry. The user may then identify
+	entries that are old so that they can be removed.
+
+	The program requires a serial modem that can deliver caller
+	ID. The modem used for testing was a Zoom model 3048. It will
+	return caller ID if it is sent command: AT+VCID=1. Note that
+	the modem is used to just get the caller ID; no attempt is
+	made to make a connection to another modem at the caller's end.
+	The program may be terminated by sending it a SIGINT (Ctrl-C)
+	signal.
+
+	The program runs on a standard PC containing a serial port (it
+	was written and tested on a Dell Dimension B110 running Ubuntu
+	7.10). It may be compiled with the following simple command:
+
+	 gcc -o jcblock jcblock.c
+
+	For continuous use, it should be run on a low-power single board
+	computer so that it can be left on all the time. The program has
+	been tested successfully on a PC/104 card running Damn Small Linux.
+
+	Country codes:
+
+	The Zoom 3048 (and probably other modems) must be sent a country
+	code command if the country is other than USA (the default).
+	The commands are as follows (check your modem documentation for
+	confirmation):
+
+	Austria		AT+GCI=0A	Hong Kong	AT+GCI=50
+	Canada		AT+GCI=B5	India		AT+GCI=53
+`	China		AT+GCI=26	Japan		AT+GCI=00
+        Denmark		AT+GCI=31	Singapore	AT+GCI=9C
+	Finland		AT+GCI=3C	Taiwan		AT+GCI=FE
+	France		AT+GCI=3D	U.K.		AT+GCI=B4
+	Germany		AT+GCI=42	U.S.A.		AT+GCI=B5
+
+	The command should be sent in the init_modem() function after
+	the modem reset command (ATZ) is sent.
+
+
