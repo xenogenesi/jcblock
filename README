@@ -51,4 +51,59 @@
 	The command should be sent in the init_modem() function after
 	the modem reset command (ATZ) is sent.
 
+	Real-time prototype system:
 
+	The figure shows a prototype jcblock system consisting of a
+	PC/104 CPU, hard disk and a Zoom model 3048 modem. The CPU
+	consists of the following PC/104 cards:
+
+	* Tri-M Systems, Inc. (www.Tri-M.com) VSX104-PBF 300MHz
+          processor module
+	* Microcomputer Systems, Inc. (www.microcomputersystems.com)
+	  MSI-NC0070 AC/DC power module
+	* Microcomputer Systems, Inc. MSI-ICOP2811 LCD/VGA module
+
+	The processor module contains a Vortex86SX (SoC) CPU that
+	implements most functions of a standard PC. The LCD?VGA
+	module is just used for testing (with a monitor connected).
+
+	The system runs version 3.3 of Damn Small Linux (DSL), which
+	was obtained from the CD included with book:
+
+	  The Official Damn Small Linux Book, Shingledecker, Andrews
+	  Negus, ISBN 0-13-233869-6, Prentice Hall, Copyright 2008.
+
+	It had to be recompiled to include math emulation, since
+	the Vortex86SX does not contain a math coprocessor. No other
+	changes were made.
+
+	The modem is accessed via serial port ttyS0 (COM1). Remote
+	access is accomplished via ttyS1 (COM2) using a null-modem
+	cable to a standard PC running minicom. An Ethernet interface
+	would be more convenient, but a driver for the Vortex86SX
+	(r6040.tar.gz) could not be found on the web. The jcblock
+	program was most conviently transferred via a USB memory
+	stick.
+
+	This system contains a hard disk, which runs all the time.
+	For an actual appliance system, a better solution would be
+	to burn DSL into a PROM and boot into a RAM disk. The problem
+	with a hard disk-based system is that it is necessary to
+	bring Linux down with a 'shutdown -h now' command before
+	turning power off -- so that the file system is closed
+	gracefully. With a PROM/RAM disk-based system, the power can
+	be turned off without a shutdown, since a new ram disk file
+	system is created on each startup. Data files, however, must
+	be kept in some form of writable flash memory (CompactFlash,
+	memory stick, etc.).
+
+	I first tried the Gridconnect (www.gridconnect.com) DNP/SK18
+	Embedded Linux Starter Kit, since it contains a version of
+	Linux in PROM. But I found that its COM2 port did not have
+	the handshaking signals needed by the modem (the COM1 port
+	is dedicated to a console).
+
+	That about summerizes my experience with this project. The
+	system runs continuously at our home and terminates junk calls
+	indicated in the blacklist file.
+ 
