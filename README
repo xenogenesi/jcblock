@@ -103,7 +103,19 @@
 	the handshaking signals needed by the modem (the COM1 port
 	is dedicated to a console).
 
+	Suggested future projects:
+
+	The program could be modified to access a USB, PCI, etc. modem.
+        The modem chosen should be sufficiently modern that it supports
+	the delivery of caller ID. Some of the older models don't.
+
+	Wrap-up:
+
 	That about summerizes my experience with this project. The
 	system runs continuously at our home and terminates junk calls
-	indicated in the blacklist file.
+	indicated in the blacklist file. The easiest way to get started
+	with this project is to just compile jcblock.c and run it on
+	a standard PC. It works fine that way, but you have to leave
+	your PC on all the time to have it work. If you do that anyway
+	then you are all set! Enjoy...
  
