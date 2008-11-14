@@ -106,7 +106,7 @@
 	Suggested future projects:
 
 	The program could be modified to access a USB, PCI, etc. modem.
-        The modem chosen should be sufficiently modern that it supports
+	The modem chosen should be sufficiently modern that it supports
 	the delivery of caller ID. Some of the older models don't.
 
 	Wrap-up:
