@@ -244,10 +244,10 @@ int wait_for_response(fd)
 
     nbytes = read( fd, buffer, 250 );
 
-    // Replace '\n' characters with '-' characters
+    // Replace '\n' and '\r' characters with '-' characters
     for( i = 0; i < nbytes; i++ )
     {
-       if( buffer[i] == '\n' )
+       if( ( buffer[i] == '\n' ) || ( buffer[i] == '\r' ) )
        {
          buffer[i] = '-';
        }
