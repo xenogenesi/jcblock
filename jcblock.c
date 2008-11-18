@@ -328,18 +328,18 @@ static void check_blacklist( char *callstr )
       // Save the string (for writing back to the file later)
       strcpy( blackbufsave, blackbuf );
 
+      // Make sure a '?' char is present in the string
+      if( strstr( blackbuf, "?" ) == NULL )
+      {
+        printf("ERROR: all blacklist.dat entry first fields *must be*\n");
+        printf("       terminated with a \'?\' character!\n");
+        return;
+      }
+
       // Get a pointer to the search token in the string
       if( ( blackbufptr = strtok( blackbuf, "?" ) ) == NULL )
       {
         printf("strtok() failed\n");
-        return;
-      }
-
-      // Make sure a '?' char was found before the Date field starts
-      if( strlen( blackbuf ) > 19 )
-      {
-        printf("ERROR: all blacklist.dat entry first fields *must be*\n" );
-        printf("       terminated with a \'?\' character!!\n");
         return;
       }
 
