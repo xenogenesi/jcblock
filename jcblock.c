@@ -36,7 +36,7 @@
  *	the modem is used to just get the caller ID; no attempt is
  *	made to make a connection to another modem at the caller's end.
  *	The program may be terminated by sending it a SIGINT (Ctrl-C)
- *	signal.
+ *	or a SIGKILL signal.
  *
  *	The program runs on a standard PC (it was written and tested
  *	on a Dell Dimension B110 running Ubuntu 7.10). It may be compiled
@@ -82,8 +82,9 @@ static char *copyright = "\n"
 // Main function
 int main(int argc, char **argv)
 {
-  // set a Ctrl-C terminator signal catcher
-  signal( SIGINT, cleanup);
+  // set a Ctrl-C and kill terminator signal catchers
+  signal( SIGINT, cleanup );
+  signal( SIGKILL, cleanup );
 
   // Display copyright notice
   printf( copyright );
@@ -422,6 +423,7 @@ static void check_blacklist( char *callstr )
         {
           printf("Date not saved; blacklist.dat entry too short!\n" );
         }
+        // A blacklist.dat entry matched, so return
         return;
       }
     }
@@ -491,7 +493,7 @@ static void close_open_port( int doCallerID )
 }
 
 //
-// SIGINT (Ctrl-C) signal handler
+// SIGINT (Ctrl-C) and SIGKILL signal handler
 //
 static void cleanup( int signo )
 {
