@@ -42,8 +42,8 @@
 
 	Austria		AT+GCI=0A	Hong Kong	AT+GCI=50
 	Canada		AT+GCI=B5	India		AT+GCI=53
-`	China		AT+GCI=26	Japan		AT+GCI=00
-        Denmark		AT+GCI=31	Singapore	AT+GCI=9C
+	China		AT+GCI=26	Japan		AT+GCI=00
+	Denmark		AT+GCI=31	Singapore	AT+GCI=9C
 	Finland		AT+GCI=3C	Taiwan		AT+GCI=FE
 	France		AT+GCI=3D	U.K.		AT+GCI=B4
 	Germany		AT+GCI=42	U.S.A.		AT+GCI=B5

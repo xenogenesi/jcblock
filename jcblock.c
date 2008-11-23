@@ -36,7 +36,7 @@
  *	the modem is used to just get the caller ID; no attempt is
  *	made to make a connection to another modem at the caller's end.
  *	The program may be terminated by sending it a SIGINT (Ctrl-C)
- *	or a SIGKILL signal.
+ *	signal or a SIGKILL signal.
  *
  *	The program runs on a standard PC (it was written and tested
  *	on a Dell Dimension B110 running Ubuntu 7.10). It may be compiled
@@ -82,7 +82,7 @@ static char *copyright = "\n"
 // Main function
 int main(int argc, char **argv)
 {
-  // set a Ctrl-C and kill terminator signal catchers
+  // set Ctrl-C and kill terminator signal catchers
   signal( SIGINT, cleanup );
   signal( SIGKILL, cleanup );
 
@@ -109,6 +109,9 @@ int main(int argc, char **argv)
     printf("fopen( blacklist.dat ) failed\n" );
     return;
   }
+
+  // Disable buffering for blacklist.dat writes
+  setbuf( fp2, NULL );
 
   // Open the serial port
   open_port();
@@ -239,7 +242,7 @@ int wait_for_response(fd)
     // Block until at least one character is available.
     // After first character is received, continue reading
     // characters until inter-character timeout (VTIME)
-    //occurs (or VMIN characters are received, which
+    // occurs (or VMIN characters are received, which
     // shouldn't happen, since VMIN is set larger than
     // the longest string expected).
 
@@ -302,6 +305,23 @@ static void check_blacklist( char *callstr )
   int i;
   long file_pos_last, file_pos_next;
 
+  // Close and re-open the blacklist.dat file. Note: this
+  // seems to be necessary to be able to write records
+  // back into the file. The write works the first time
+  // after the file is opened but not subsequently! :-(
+  //
+  fclose( fp2 );
+
+  // Re-open for reading and writing
+  if( (fp2 = fopen( "blacklist.dat", "r+" ) ) == NULL )
+  {
+    printf("re-open fopen( blacklist) failed\n" );
+    return;
+  }
+
+  // Disable buffering for blacklist.dat writes
+  setbuf( fp2, NULL );
+
   // Seek to beginning of list
   fseek( fp2, 0, SEEK_SET );
 
@@ -333,7 +353,7 @@ static void check_blacklist( char *callstr )
       if( strstr( blackbuf, "?" ) == NULL )
       {
         printf("ERROR: all blacklist.dat entry first fields *must be*\n");
-        printf("       terminated with a \'?\' character!\n");
+        printf("       terminated with a \'?\' character!!\n");
         return;
       }
 
@@ -418,6 +438,10 @@ static void check_blacklist( char *callstr )
             printf("fflush(fp2) failed\n");
             return;
           }
+
+          // Force kernel file buffers to the disk
+          // (probably not necessary)
+          sync();
         }
         else
         {
