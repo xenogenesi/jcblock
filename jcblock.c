@@ -309,6 +309,8 @@ static void check_blacklist( char *callstr )
   // seems to be necessary to be able to write records
   // back into the file. The write works the first time
   // after the file is opened but not subsequently! :-(
+  // This also allows blacklist changes made while the
+  // program is running to be recognized.
   //
   fclose( fp2 );
 

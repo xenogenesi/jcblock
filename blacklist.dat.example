@@ -3,7 +3,7 @@
 # The Date-of-last-block field starts in the 20th column. Be sure to add the
 # '----' characters to a new entry so that room to store the date is present on
 # the line. The rest of the line (out to 80 chars)  can contain a comment of your
-# choosing. For a change to be activated, you must restart jcblock.
+# choosing.
 #
 # Examples (without the initial '#' chars!):
 #
