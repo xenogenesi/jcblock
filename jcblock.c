@@ -267,8 +267,8 @@ int wait_for_response(fd)
 
     // A string was received. If its a call
     // string, write string to callerID.dat file.
-    // Ignore short strings (RING strings).
-    if( nbytes > 40 )
+    // Ignore 'RING' strings.
+    if( strstr( buffer, "RING" ) == NULL )
     {
       if( fprintf( fp, buffer ) < 0 )
       {
