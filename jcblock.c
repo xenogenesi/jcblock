@@ -22,13 +22,18 @@
  *	This program connects to a serial port modem and listens for
  *	the caller ID string that is sent between the first and second
  *	rings. It records the string in file callerID.dat. It then
- *	reads strings from file blacklist.dat and scans them against
- *	the caller ID string for a match. If it finds a match to a
- *	string in the blacklist, it sends an off-hook command (ATH1)
- *	to the modem, followed by an on-hook command (ATH0). This
- *	terminates the junk call. The program also updates the date
- *      field of the matching blacklist entry. The user may then identify
- *	entries that are old so that they can be removed.
+ *      reads strings from file whitelist.dat and scans them against
+ *      the caller ID string for a match. If it finds a match it accepts
+ *      the call. If a match is not found, it reads strings from file
+ *      blacklist.dat and scans them against the caller ID string for a
+ *      match. If it finds a match to a string in the blacklist, it sends
+ *      an off-hook command (ATH1) to the modem, followed by an on-hook
+ *      command (ATH0). This terminates the junk call.
+ *
+ *      The program also updates the date field of a matching whitelist or
+ *      blacklist entry. The user may then identify entries that are old so
+ *      that they can be removed. Note that the program will operate with
+ *      only a whitelist.dat or blacklist.dat file defined.
  *
  *	The program requires a serial modem that can deliver caller
  *	ID. The modem used for testing was a Zoom model 3048. It will
@@ -60,14 +65,16 @@
 #define CALLERID_NO 0
 
 int fd;
-FILE *fp;
-FILE *fp2;
+FILE *fp;                                // callerID.dat file
+FILE *fp2;                               // blacklist.dat file
+FILE *fp3;                               // whitelist.dat file
 static struct termios options;
 
 static void cleanup( int signo );
 
 int send_modem_command(int fd, char *command );
 static void check_blacklist( char *callstr );
+static int check_whitelist( char * callstr );
 static void open_port();
 static void close_open_port( int doCallerID );
 int init_modem(int fd, int doCallerID );
@@ -89,29 +96,44 @@ int main(int argc, char **argv)
   // Display copyright notice
   printf( copyright );
 
-  // Open a file to write caller ID strings to
+  // Open or create a file to append caller ID strings to
   if( (fp = fopen( "callerID.dat", "a+" ) ) == NULL )
   {
-    printf("fopen() failed\n");
+    printf("fopen() of callerID.dat failed\n");
     return;
   }
 
-  // Seek to end of existing strings
-  if( fseek(fp, 0L, SEEK_END) < 0 )
+  // Open the whitelist file (for reading & writing)
+  if( (fp3 = fopen( "whitelist.dat", "r+" ) ) == NULL )
   {
-    printf("fseek() failed\n");
-    return;
+    printf("fopen() of whitelist.dat failed\n" );
   }
 
   // Open the blacklist file (for reading & writing)
   if( (fp2 = fopen( "blacklist.dat", "r+" ) ) == NULL )
   {
-    printf("fopen( blacklist.dat ) failed\n" );
+    printf("fopen() of blacklist.dat failed\n" );
+  }
+
+  // If both file opens failed (neither file is present),
+  // return (Note: the program may be run with a whitelist, a
+  // blacklist or both -- but one or the other must be present).
+  if( (fp2 == NULL) && (fp3 == NULL) )
+  {
+    printf( "A blacklist.dat and/or a whitelist.dat file must exist!\n" );
     return;
   }
 
-  // Disable buffering for blacklist.dat writes
-  setbuf( fp2, NULL );
+  // Disable buffering
+  if( fp2 != NULL )
+  {
+    setbuf( fp2, NULL );
+  }
+
+  if( fp3 != NULL )
+  {
+    setbuf( fp3, NULL );
+  }
 
   // Open the serial port
   open_port();
@@ -123,6 +145,7 @@ int main(int argc, char **argv)
     close( fd );
     fclose(fp);
     fclose(fp2);
+    fclose(fp3);
     return;
   }
 
@@ -134,6 +157,7 @@ int main(int argc, char **argv)
   close( fd );
   fclose(fp);
   fclose(fp2);
+  fclose(fp3);
 }
 
 //
@@ -199,18 +223,6 @@ int send_modem_command(int fd, char *command )
     // null terminate the string and see if we got an OK response
     *bufptr = '\0';
 
-#if 0
-for( i = 0; buffer[i] != '\0' ; i++ )
-   if( buffer[i] == '\n' )
-   {
-     printf("buf[i] LF, i %d\n", i );
-   }
-   else if( buffer[i] == '\r' )
-     printf("buf[i] CR, i %d\n", i );
-   else
-     printf("buf[i] %c, i %d\n", buffer[i], i );
-#endif
-
     // Scan for string "OK"
     if( strstr( buffer, "OK" ) != NULL )
     {
@@ -270,6 +282,15 @@ int wait_for_response(fd)
     // Ignore 'RING' strings.
     if( strstr( buffer, "RING" ) == NULL )
     {
+      // Close and re-open file 'callerID.dat' (in case it was
+      // edited while the program was running!).
+      fclose(fp);
+      if( (fp = fopen( "callerID.dat", "a+" ) ) == NULL )
+      {
+        printf("re-fopen() of callerID.dat failed\n");
+        return(-1);
+      }
+
       if( fprintf( fp, buffer ) < 0 )
       {
         printf("fprintf() failed\n");
@@ -283,10 +304,162 @@ int wait_for_response(fd)
         return(-1);
       }
 
-      // Compare to blacklist; answer call if present
-      check_blacklist( buffer );
+      // If a whitelist.dat file was present, compare the
+      // caller ID string to entries in the whitelist. If a match
+      // is found, accept the call and bypass the blacklist check.
+      if( fp3 != NULL )
+      {
+        if( check_whitelist( buffer ) != 0 )
+        {
+          // Caller match was found, so accept the call
+          continue;
+        }
+      }
+
+      // If a blacklist.dat file was present, compare the
+      // caller ID string to entries in the blacklist. If a match
+      // is found, answer (i.e., terminate) the call.
+      if( fp2 != NULL )
+      {
+        check_blacklist( buffer );
+      }
     }
   }
+}
+
+//
+// Compare strings in the 'whitelist.dat' file to fields in the
+// received caller ID string. If a whitelist string is present,
+// return 1; otherwise return 0.
+//
+static int check_whitelist( char *callstr )
+{
+  char whitebuf[100];
+  char whitebufsave[100];
+  char *whitebufptr;
+  char call_date[10];
+  char *dateptr;
+  int i;
+  long file_pos_last, file_pos_next;
+
+  // Close and re-open the whitelist.dat file. Note: this
+  // seems to be necessary to be able to write records
+  // back into the file. The write works the first time
+  // after the file is opened but not subsequently! :-(
+  // This also allows whitelist changes made while the
+  // program is running to be recognized.
+  //
+  fclose( fp3 );
+
+  // Re-open for reading and writing
+  if( (fp3 = fopen( "whitelist.dat", "r+" ) ) == NULL )
+  {
+    printf("re-open fopen() of whitelist.dat failed\n" );
+    return(1);           // accept the call
+  }
+
+  // Disable buffering for whitelist.dat writes
+  setbuf( fp3, NULL );
+
+  // Seek to beginning of list
+  fseek( fp3, 0, SEEK_SET );
+
+  // Save the file's current access location
+  if( file_pos_next = ftell( fp3 ) == -1L )
+  {
+    printf("ftell(fp3) failed\n");
+    return(1);           // accept the call
+  }
+
+  while( fgets( whitebuf, sizeof( whitebuf ), fp3 ) != NULL )
+  {
+    // Save the start location of the string just read and get
+    // the location of the start of the next string in the file.
+    file_pos_last = file_pos_next;
+    file_pos_next = ftell( fp3 );
+
+    // Ignore lines that start with a '#' character (comment lines)
+    if( whitebuf[0] == '#' )
+      continue;
+
+    // Ignore lines containing just a '\n'
+    if( whitebuf[0] != '\n' )
+    {
+      // Save the string (for writing back to the file later)
+      strcpy( whitebufsave, whitebuf );
+
+      // Make sure a '?' char is present in the string
+      if( strstr( whitebuf, "?" ) == NULL )
+      {
+        printf("ERROR: all whitelist.dat entry first fields *must be*\n");
+        printf("       terminated with a \'?\' character!! Entey is:\n");
+        printf("       %s", whitebuf);
+        printf("       Entry was ignored!\n");
+        continue;
+      }
+
+      // Get a pointer to the search token in the string
+      if( ( whitebufptr = strtok( whitebuf, "?" ) ) == NULL )
+      {
+        printf("whitebuf strtok() failed\n");
+        return(1);         // accept the call
+      }
+
+      // Scan the call string for the whitelist entry
+      if( strstr( callstr, whitebufptr ) != NULL )
+      {
+#ifdef DEBUG
+        printf("whitelist entry matches: %s\n", whitebuf );
+#endif
+        // Make sure the string is long enough to hold the date
+        if( strlen( whitebufsave ) >= 24 )
+        {
+          // Make sure the 'DATE = ' field is present
+          if( (dateptr = strstr( callstr, "DATE = " ) ) == NULL )
+          {
+            printf( "DATE field not found in caller ID!\n" );
+            return(1);     // accept the call
+          }
+
+          // Get the current date from the caller ID string
+          strncpy( call_date, &dateptr[7], 4 );
+
+          // Terminate the string
+          call_date[4] = 0;
+
+          // Update the date in the whitebufsave record
+          strncpy( &whitebufsave[19], call_date, 4 );
+
+          // Write the record back to the whitelist.dat file
+          fseek( fp3, file_pos_last, SEEK_SET );
+          if( fputs( whitebufsave, fp3 ) == EOF )
+          {
+            printf("fputs(whitebufsave, fp3) failed\n" );
+            return(1);         // accept the call
+          }
+
+          // Flush the string to the file
+          if( fflush(fp3) == EOF )
+          {
+            printf("fflush(fp3) failed\n");
+            return(1);         // accept the call
+          }
+
+          // Force kernel file buffers to the disk
+          // (probably not necessary)
+          sync();
+        }
+        else
+        {
+          printf("Date not saved; whitelist.dat entry too short!\n" );
+        }
+        // A whitelist.dat entry matched, so return 1
+        return(1);             // accept the call
+      }
+    }
+  }
+  // No whitelist.dat entry matched, so return 0.
+  return(0);
 }
 
 //
@@ -330,7 +503,7 @@ static void check_blacklist( char *callstr )
   // Save the file's current access location
   if( file_pos_next = ftell( fp2 ) == -1L )
   {
-    printf("ftell() failed\n");
+    printf("ftell(fp2) failed\n");
     return;
   }
 
@@ -355,14 +528,16 @@ static void check_blacklist( char *callstr )
       if( strstr( blackbuf, "?" ) == NULL )
       {
         printf("ERROR: all blacklist.dat entry first fields *must be*\n");
-        printf("       terminated with a \'?\' character!!\n");
-        return;
+        printf("       terminated with a \'?\' character!! Entry is:\n");
+        printf("       %s", blackbuf);
+        printf("       Entry was ignored!\n");
+        continue;
       }
 
       // Get a pointer to the search token in the string
       if( ( blackbufptr = strtok( blackbuf, "?" ) ) == NULL )
       {
-        printf("strtok() failed\n");
+        printf("blackbuf strtok() failed\n");
         return;
       }
 
@@ -430,7 +605,7 @@ static void check_blacklist( char *callstr )
           fseek( fp2, file_pos_last, SEEK_SET );
           if( fputs( blackbufsave, fp2 ) == EOF )
           {
-            printf("fputs() failed\n" );
+            printf("fputs(blackbufsave, fp2) failed\n" );
             return;
           }
 
@@ -532,6 +707,7 @@ static void cleanup( int signo )
   close(fd);
   fclose(fp);
   fclose(fp2);
+  fclose(fp3);
   _exit(0);
 }
 

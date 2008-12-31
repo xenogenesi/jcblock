@@ -3,14 +3,15 @@
 # The Date-of-last-block field starts in the 20th column. Be sure to add the
 # '----' characters to a new entry so that room to store the date is present on
 # the line. The rest of the line (out to 80 chars)  can contain a comment of your
-# choosing.
+# choosing. A change will be recognized by a running jcblock program.
 #
 # Examples (without the initial '#' chars!):
 #
 #                  | <--- the 20th column
 #Tested field:     Date field:
 #8005551212?        ----          PHONE NUMBER
-#Cell Phone?        ----          CELL PHONE CALL
+#Cell Phone?        ----          ALL CELL PHONE CALLS
+#Cell Phone   CA?   ----          ALL CELL PHONE CALLS FROM CALIFORNIA
 #PAGING PHONE?      ----          JUNK CALL
 #MARKETING?         ----          JUNK CALL
 #UNAVAILABLE?       ----          POLITICAL CALL
