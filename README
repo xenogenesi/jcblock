@@ -1,121 +1,195 @@
 
 	Program: jcblock
-
+	
 	Description:
 
 	A program to block telemarketing (junk) calls.
-	This program connects to a serial port modem and listens for
-	the caller ID string that is sent between the first and second
-	rings. It records the string in file callerID.dat. It then
-	reads strings from file blacklist.dat and scans them against
-	the caller ID string for a match. If it finds a match to a
-	string in the blacklist, it sends an off-hook command (ATH1)
-	to the modem, followed by an on-hook command (ATH0). This
-	terminates the junk call. The program also updates the date
-	field of the matching blacklist entry. The user may then identify
-	entries that are old so that they can be removed.
 
-	The program requires a serial modem that can deliver caller
-	ID. The modem used for testing was a Zoom model 3048. It will
-	return caller ID if it is sent command: AT+VCID=1. Note that
-	the modem is used to just get the caller ID; no attempt is
-	made to make a connection to another modem at the caller's end.
-	The program may be terminated by sending it a SIGINT (Ctrl-C)
-	signal.
+        Description:
+        A program to block telemarketing (junk) calls.
+        This program connects to a serial port modem and listens for
+        the caller ID string that is sent between the first and second
+        rings. It records the string in file callerID.dat. It then
+        reads strings from file whitelist.dat and scans them against
+        the caller ID string for a match. If it finds a match it accepts
+        the call. If a match is not found, it reads strings from file
+        blacklist.dat and scans them against the caller ID string for a
+        match. If it finds a match to a string in the blacklist, it sends
+        an off-hook command (ATH1) to the modem, followed by an on-hook
+        command (ATH0). This terminates the junk call.
+  
+        The program also updates the date field of a matching whitelist or
+        blacklist entry. Entries that are old may then be identified so
+        that they may be removed. Note that the program will operate with
+        only a whitelist.dat or blacklist.dat file defined.
+  
+        Functions to manage the truncation (removal) of records from the
+        blacklist.dat and callerID.dat files are present in file truncate.c.
+        Records in the blacklist.dat file that have not been used to
+        terminate a call in the last year are removed. Records in the
+        callerID.dat file that are older than a year are removed. The
+        operations are performed every thirty days. Alternatively, entries
+        in the .dat files may be edited manually.
+  
+        An additional feature is supported by functions in file tones.c.
+        The program will add a record to the blacklist.dat file for the
+        current call if the operator presses key '5' on a touch tone
+        telephone handset during an allotted time period. The program
+        detects the tone via a microphone placed near the modem speaker.
+        Functions in file tones.c detect the presence of tones (770 Hz
+        and 1336 Hz) produced by pressing the '5' key.
+  
+        The program requires a serial modem that can deliver caller
+        ID and contains a speaker. The modem used for testing was a Zoom
+        model 3048. It will return caller ID if it is sent command:
+        AT+VCID=1. Note that the modem is used just to detect a call's
+        caller ID and key '5' tones; the modem's normal communication
+        function is not used. The program may be terminated by sending
+        it a SIGINT (Ctrl-C) signal or a SIGKILL signal.
+  
+        The program runs on a standard PC (it was written and tested
+        on a Dell Dimension B110 running Ubuntu). The features
+        supported by functions in files truncate.c and tones.c may be
+        removed by disabling their function calls in file jcblock.c.
+        The entire program may be compiled with the following command:
+  
+        gcc -o jcblock jcblock.c tones.c truncate.c -lasound -ldl -lm
+  
+        For continuous use, it should be run on a low-power single board
+        computer so that it can be left on all the time.
 
-	The program runs on a standard PC containing a serial port (it
-	was written and tested on a Dell Dimension B110 running Ubuntu
-	7.10). It may be compiled with the following simple command:
+	More on the whitelist:
 
-	 gcc -o jcblock jcblock.c
+	As a result of operational experience it became evident that
+	the addition of a whitelist capability would be helpful. The whitelist
+	file (whitelist.dat) holds entries containing the telephone numbers
+	of calls the user definitely wants to accept. The program checks for
+	caller ID matches of these entries first. If a match is found, the
+	blacklist check is bypassed and the call is accepted.
 
-	For continuous use, it should be run on a low-power single board
-	computer so that it can be left on all the time. The program has
-	been tested successfully on a PC/104 card running Damn Small Linux.
+	The issue came up when it was discovered that some telemarketers use
+	cell phones! For cell phone calls, the 'NAME =' field in the caller ID
+	string is usually: 'Cell Phone   XX', where XX is the originating state
+	designator (e.g., CA for California). So using the 'NAME =' field as the
+	search string in a blacklist entry would cause all cell phone calls
+	from the indicated state to be blocked! In addition, the telemarketers
+	use several cell phones (probably as employees come and go), so using
+	the 'NMBR =' field in the caller ID as the search string does not catch
+	new cell phone callers. Adding a whitelist partially solves this
+	problem.
 
-	Country codes:
+	With a whitelist, the user can include entries that contain the cell
+	phone numbers of calls they definitely want to receive from a specific
+	state (e.g., CA). Then the cell phone 'NAME =' field for the state (e.g.,
+	'Cell Phone   CA') can be used as the search string in a blacklist
+	entry. With this arrangement all cell phone calls from the state will
+	be blocked *except* the ones with numbers present in the whitelist.
 
-	The Zoom 3048 (and probably other modems) must be sent a country
-	code command if the country is other than USA (the default).
-	The commands are as follows (check your modem documentation for
-	confirmation):
+	In certain cases it might be useful to run the program with just a
+	whitelist or just a blacklist. The program was modified to support
+	these cases. For example, a user might want to *only* accept calls
+	from specific numbers. In that case only a whitelist is needed.
 
-	Austria		AT+GCI=0A	Hong Kong	AT+GCI=50
-	Canada		AT+GCI=B5	India		AT+GCI=53
-	China		AT+GCI=26	Japan		AT+GCI=00
-	Denmark		AT+GCI=31	Singapore	AT+GCI=9C
-	Finland		AT+GCI=3C	Taiwan		AT+GCI=FE
-	France		AT+GCI=3D	U.K.		AT+GCI=B4
-	Germany		AT+GCI=42	U.S.A.		AT+GCI=B5
+        Country codes:
 
-	The command should be sent in the init_modem() function after
-	the modem reset command (ATZ) is sent.
+        The Zoom 3048 (and probably other modems) must be sent a country
+        code command if the country of use is other than USA (the default).
+        The commands are as follows (check your modem documentation for
+        confirmation):
 
-	Real-time prototype system:
+        Austria         AT+GCI=0A       Hong Kong       AT+GCI=50
+        Canada          AT+GCI=B5       India           AT+GCI=53
+        China           AT+GCI=26       Japan           AT+GCI=00
+        Denmark         AT+GCI=31       Singapore       AT+GCI=9C
+        Finland         AT+GCI=3C       Taiwan          AT+GCI=FE
+        France          AT+GCI=3D       U.K.            AT+GCI=B4
+        Germany         AT+GCI=42       U.S.A.          AT+GCI=B5
 
-	The figure shows a prototype jcblock system consisting of a
-	PC/104 CPU, hard disk and a Zoom model 3048 modem. The CPU
-	consists of the following PC/104 cards:
+        The command should be sent in the init_modem() function after
+        the modem reset command (ATZ) is sent. Other program changes may
+	needed to conform to non-USA country telephone systems.
 
-	* Tri-M Systems, Inc. (www.Tri-M.com) VSX104-PBF 300MHz
-          processor module
-	* Microcomputer Systems, Inc. (www.microcomputersystems.com)
-	  MSI-NC0070 AC/DC power module
-	* Microcomputer Systems, Inc. MSI-ICOP2811 LCD/VGA module
+        Real-time prototype system:
 
-	The processor module contains a Vortex86SX (SoC) CPU that
-	implements most functions of a standard PC. The LCD?VGA
-	module is just used for testing (with a monitor connected).
+        The photo shows a prototype jcblock system consisting of a
+	Zoom 3048 modem and an eBox-3300 Server-in-a-box (SIB) purchased
+	from EMAC, Inc. The SIB contains a Vortex86DX System-on-a-Chip
+	that implements most of the functions of a standard x86 PC. The
+	system shown draws about 6 watts, so the cost of running it 24/7
+	is minimal. The eBox came with a version of Linux installed that
+	did not have the ALSA audio interface. Since this application
+	requires a microphone to implement the key '5' feature, I chose to
+	boot a stripped down version of Knoppix from a USB memory stick.
 
-	The system runs version 3.3 of Damn Small Linux (DSL), which
-	was obtained from the CD included with book:
+	I started with the version included on a DVD with the book:
+	"KNOPPIX HACKS, 2nd Edition", O'Reilly, ISBN:978-0-596-51493-8
+	and "remastered" it (trimmed its size) using the procedures
+	described in hacks #109 and #110 (in addition, I removed all
+	documentation and Linux source code, etc.). The result was a
+	version that would fit on a CD, for backup. The procedure results
+	in a knoppix.iso file which I then used to make USB boot version
+	using a procedure I found at:
+		http://www.knoppix.net/wiki/USB_Based_FAQ
+	Note that if you don't need the key '5' feature, the program will
+	run just fine on the version of Linux that comes with the eBox.
+	The Knoppix version has the additional advantage that the gcc
+	compiler, libraries and include files needed to compile the program
+	are present on the target.
 
-	  The Official Damn Small Linux Book, Shingledecker, Andrews
-	  Negus, ISBN 0-13-233869-6, Prentice Hall, Copyright 2008.
+	The knoppix system did not contain an Ethernet module that was
+	compatible with the Vortex86DX chip. The needed module is
+	r6040.ko. It may be downloaded from a site reached via:
+	  http://dir.filewatcher.com/d/Debian/all/net/r6040-source
+	The module depends on module mii.ko, which was included with
+	Knoppix.
 
-	It had to be recompiled to include math emulation, since
-	the Vortex86SX does not contain a math coprocessor. No other
-	changes were made.
+	The photo shows the Knoppix USB stick installed in a front USB
+	socket. All application files are contained on the USB stick
+	installed in the back. This provides non-volatile storage for
+	them, which is needed for the callerID, blacklist and whitelist
+	files. The EBox BIOS may be instructed to boot from the USB stick.
 
-	The modem is accessed via serial port ttyS0 (COM1). Remote
-	access is accomplished via ttyS1 (COM2) using a null-modem
-	cable to a standard PC running minicom. An Ethernet interface
-	would be more convenient, but a driver for the Vortex86SX
-	(r6040.tar.gz) could not be found on the web. The jcblock
-	program was most conviently transferred via a USB memory
-	stick.
+	During the process of constructing the knoppix.iso file, as
+	described above, I installed a script called startApp in /etc/init.d
+`	and link S99startApp to it in /etc/rc2.d to provide for automatic
+	startup of jcblock (the grub loader menu.lst file instructs grub to
+	boot to level 2). Script startApp mounts the application USB stick
+	on /mnt and then runs a setPorts script on it to perform various
+	system administration functions not included in the knoppix.iso
+	build (some that were forgotten!) before starting the application
+	program jcblock. As a result, the entire system starts up and runs
+	when the power is turned on without the need for manual operations
+	via a terminal and keyboard. Since sshd and ftpd daemons are started,
+	all maintenance may be performed via the Ethernet interface. It is
+	especially convenient to maintain data files using a Firefox plugin
+	called FireFTP. So the system may be maintained through a GUI from
+	any computer that can run Firefox (e.g., Windows, Mac, etc.).
 
-	This system contains a hard disk, which runs all the time.
-	For an actual appliance system, a better solution would be
-	to burn DSL into a PROM and boot into a RAM disk. The problem
-	with a hard disk-based system is that it is necessary to
-	bring Linux down with a 'shutdown -h now' command before
-	turning power off -- so that the file system is closed
-	gracefully. With a PROM/RAM disk-based system, the power can
-	be turned off without a shutdown, since a new ram disk file
-	system is created on each startup. Data files, however, must
-	be kept in some form of writable flash memory (CompactFlash,
-	memory stick, etc.).
+	There is the issue of interrupting a write to flash memory by a
+	power failure (or turn-off), which could cause damage to the memory.
+	The application program is normally blocked in a serial port read
+	operation, waiting for a call. The only time writes occur is for a
+	short time immediately after a call is received. So, if the unit is
+	turned off at other times, no damage will occur to the USB memory.
+	On the outside chance that memory is damaged, the application USB
+	memory stick may be easily replaced. Since Knoppix loads into a
+	RAM disk, no damage can occur to it. 
+	
+        Wrap-up:
 
-	I first tried the Gridconnect (www.gridconnect.com) DNP/SK18
-	Embedded Linux Starter Kit, since it contains a version of
-	Linux in PROM. But I found that its COM2 port did not have
-	the handshaking signals needed by the modem (the COM1 port
-	is dedicated to a console).
+        That about summarizes my experience with this project. The
+        system runs continuously at our home and terminates junk calls
+        indicated in the blacklist file. After about six months the number
+        of junk calls we received decreased to only a few a week as the
+        telemarketers removed us from their call lists.
 
-	Suggested future projects:
+        The easiest way to get started with this project is to just compile
+        the program and run it on a standard PC. It works fine that way,
+        but you have to leave your PC on all the time to be useful in
+        terminating calls. If you do that anyway then you are all set!
+        Otherwise you should eventually consider installing it on a dedicated
+        low power embedded computer system similar to the one I described
+	above. If your PC does not have a serial port, a PCI serial port card
+	can be installed at minimal expense.
 
-	The program could be modified to access a USB, PCI, etc. modem.
-	The modem chosen should be sufficiently modern that it supports
-	the delivery of caller ID. Some of the older models don't.
 
-	Wrap-up:
-
-	That about summerizes my experience with this project. The
-	system runs continuously at our home and terminates junk calls
-	indicated in the blacklist file. The easiest way to get started
-	with this project is to just compile jcblock.c and run it on
-	a standard PC. It works fine that way, but you have to leave
-	your PC on all the time to have it work. If you do that anyway
-	then you are all set! Enjoy...
- 

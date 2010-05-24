@@ -1,0 +1,1 @@
+gcc -o jcblock jcblock.c tones.c truncate.c -lasound -ldl -lm

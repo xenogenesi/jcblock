@@ -33,3 +33,7 @@
 	whitelist or just a blacklist. The program was modified to support
 	these cases. For example, a user might want to *only* accept calls
 	from specific numbers. In that case only a whitelist is needed.
+
+	Updates/Additions added after release jcblock_release_2-0
+
+	None so far...
