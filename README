@@ -55,8 +55,19 @@
   
         gcc -o jcblock jcblock.c tones.c truncate.c -lasound -ldl -lm
   
-        For continuous use, it should be run on a low-power single board
-        computer so that it can be left on all the time.
+	Linux installations may or may not install the libasound library.
+	It is usually installed in /usr/lib. Also, the tones.c file
+	includes file asoundlib.h, which is usually located in directory
+	/usr/include/alsa. If not installed, they can be by using
+	the distribution's package manager. For example, for an Ubuntu
+	distribution, the Synaptic Package Manager may be used to
+	install alsa-base, to install the library, and alsa-source, to
+	install the include file. It is also a good idea to install
+	alsa-utils in case testing/debugging of the sound interface is
+	needed.
+
+        For continuous use, the program should be run on a low-power single
+	board computer so that it can be left on all the time.
 
 	More on the whitelist:
 
@@ -147,7 +158,7 @@
 	socket. All application files are contained on the USB stick
 	installed in the back. This provides non-volatile storage for
 	them, which is needed for the callerID, blacklist and whitelist
-	files. The EBox BIOS may be instructed to boot from the USB stick.
+	files. The eBox BIOS may be instructed to boot from the USB stick.
 
 	During the process of constructing the knoppix.iso file, as
 	described above, I installed a script called startApp in /etc/init.d

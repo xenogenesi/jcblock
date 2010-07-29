@@ -36,4 +36,14 @@
 
 	Updates/Additions added after release jcblock_release_2-0
 
-	None so far...
+	26 July, 2010: Added libasound comment to README file
+	-----------------------------------------------------
+
+	Some user's computers did not have the libasound library or the
+	asoundlib.h file installed. Text was added to the README file
+	describing how to install these files using a distribution's package
+	manager. Search the file for 'asound'. Some minor syntax changes to
+	printf and fprintf arguments were made in jcblock.c to satisfy more
+	strict type checking by recent versions of gcc.
+	
+

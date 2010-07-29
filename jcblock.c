@@ -124,7 +124,7 @@ int main(int argc, char **argv)
   signal( SIGKILL, cleanup );
   
   // Display copyright notice
-  printf( copyright );
+  printf( "%s", copyright );
 
   // Initialize the key '5' tones operation
   tonesInit();
@@ -367,7 +367,7 @@ int wait_for_response(fd)
       }
 
       // Write the record to the file
-      if( fprintf( fpCa, buffer2 ) < 0 )
+      if( fprintf( fpCa, (const char *)buffer2 ) < 0 )
       {
         printf("fprintf() failed\n");
         return(-1);
