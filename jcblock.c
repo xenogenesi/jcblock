@@ -86,6 +86,17 @@
 
 #define DEBUG
 
+// Comment out the following define if you don't have ALSA audio
+// support. Then compile with:
+//     gcc -o jcblock jcblock.c truncate.c -lm
+// The program will then have all capabilities except the key-5 feature.
+#define DO_TONES
+
+// Comment out the following define if you don't want truncation of
+// records older than one year from files blacklist.dat and callerID.dat.
+// Then remove truncate.c from the gcc compile command.
+#define DO_TRUNCATE
+
 #define CALLERID_YES 1
 #define CALLERID_NO 0
 
@@ -126,8 +137,10 @@ int main(int argc, char **argv)
   // Display copyright notice
   printf( "%s", copyright );
 
+#ifdef DO_TONES
   // Initialize the key '5' tones operation
   tonesInit();
+#endif
 
   // Open or create a file to append caller ID strings to
   if( (fpCa = fopen( "./callerID.dat", "a+" ) ) == NULL )
@@ -169,7 +182,9 @@ int main(int argc, char **argv)
     fclose(fpCa);
     fclose(fpBl);
     fclose(fpWh);
+#ifdef DO_TONES
     tonesClose();
+#endif
     return;
   }
 
@@ -185,7 +200,9 @@ modemInitialized = TRUE;
   fclose(fpCa);
   fclose(fpBl);
   fclose(fpWh);
+#ifdef DO_TONES
   tonesClose();
+#endif
 }
 
 //
@@ -401,6 +418,7 @@ int wait_for_response(fd)
         {
           // Blacklist entry was found.
           //
+#ifdef DO_TRUNCATE
           // The following function truncates (removes old) entries
           // in data files -- if thirty days have elapsed since the
           // last time it truncated. Entries in callerID.dat are removed
@@ -412,8 +430,10 @@ int wait_for_response(fd)
           // don't want automatic file truncation. All of its code is in
           // truncate.c.
           truncate_records();
+#endif                                   // end DO_TRUNCATE
           continue;
         }
+#ifdef DO_TONES
       // At this point the phone will ring until the call has been
       // answered or the caller hangs up (RING strings stop arriving).
       // Listen for a key '5' press by polling the microphone. If a
@@ -487,6 +507,7 @@ int wait_for_response(fd)
           send_modem_command(fd, "AT+VCID=1\r");
           continue;
         }
+#endif                          // end DO_TONES
       }
     }
   }         // end of while()
