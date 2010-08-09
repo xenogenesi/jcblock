@@ -47,17 +47,17 @@
  *
  *	An additional feature is supported by functions in file tones.c.
  *	The program will add a record to the blacklist.dat file for the
- *	current call if the operator presses key '5' on a touch tone
- *	telephone handset during an alloted time period. The program
- *	detects the tone via a microphone placed near the modem speaker.
- *	Functions in file tones.c detect the presence of tones (770 Hz
- *	and 1336 Hz) produced by pressing the '5' key.
+ *	current call if the operator presses the star (*, asterisk) key on a
+ *	touch tone telephone handset during an alloted time period. The
+ *	program detects the tone via a microphone placed near the modem speaker.
+ *	Functions in file tones.c detect the presence of tones (941 Hz
+ *	and 1209 Hz) produced by pressing the star (*) key.
  *
  *	The program requires a serial modem that can deliver caller
  *	ID and contains a speaker. The modem used for testing was a Zoom 
  *	model 3048. It will return caller ID if it is sent command:
  *	AT+VCID=1. Note that the modem is used just to detect a call's
- *	caller ID and key '5' tones; the modem's normal communication
+ *	caller ID and the star key (*) tones; the modem's normal communication
  *	function is not used. The program may be terminated by sending
  *	it a SIGINT (Ctrl-C) signal or a SIGKILL signal.
  *
@@ -89,7 +89,8 @@
 // Comment out the following define if you don't have ALSA audio
 // support. Then compile with:
 //     gcc -o jcblock jcblock.c truncate.c -lm
-// The program will then have all capabilities except the key-5 feature.
+// The program will then have all capabilities except the star (*) key
+// feature.
 #define DO_TONES
 
 // Comment out the following define if you don't want truncation of
@@ -138,7 +139,7 @@ int main(int argc, char **argv)
   printf( "%s", copyright );
 
 #ifdef DO_TONES
-  // Initialize the key '5' tones operation
+  // Initialize the the star (*) key tones operation
   tonesInit();
 #endif
 
@@ -222,6 +223,10 @@ int init_modem(int fd, int doCallerID )
   }
 
   sleep(1);   // needed
+
+  // If operating in a non-US telephone system region,
+  // insert an appropriate "AT+GCI=XX\r" modem command here.
+  // See the README file for details.
 
   if( doCallerID )
   {
@@ -436,7 +441,7 @@ int wait_for_response(fd)
 #ifdef DO_TONES
       // At this point the phone will ring until the call has been
       // answered or the caller hangs up (RING strings stop arriving).
-      // Listen for a key '5' press by polling the microphone. If a
+      // Listen for a star (*) key press by polling the microphone. If a
       // press is detected (within the timed window), build and add
       // an entry to the blacklist for this call.
         else
@@ -470,12 +475,12 @@ int wait_for_response(fd)
           // Reinitialize the serial port for blocked operation
           close(fd);
           open_port( OPEN_PORT_BLOCKED );
-          // Poll for a touchtone key '5' press
+          // Poll for a touchtone star (*) key press
 
           // Send "off/on/off hook" modem commands (so the mic can
-          // detect the key '5' tones). When commands are  sent,
+          // detect the star (*) key tones). When commands are  sent,
           // listner hears three "click". That indicates the start of
-          // the timed window when a key '5' press will be accepted.
+          // the timed window when a star (*) key press will be accepted.
           // Send three commands to produce three clicks.
           send_modem_command(fd, "ATH1\r"); // off hook
           send_modem_command(fd, "ATH0\r"); // on hook
@@ -488,7 +493,7 @@ int wait_for_response(fd)
             continue;
           }
 
-          // Poll for key '5' press within the timeout window
+          // Poll for star (*) key press within the timeout window
           // (ten seconds)
           while( (pollTime = time( NULL )) < pollStartTime + 10 )
           {
@@ -830,7 +835,7 @@ bool write_blacklist( char *callstr )
 {
   char blackbuf[100];
   char blacklistEntry[80];
-  char *srcDesc = "KEY-5 ENTRY";
+  char *srcDesc = "KEY-* ENTRY";
   int i;
   char yearStr[10];
 
@@ -883,7 +888,7 @@ bool write_blacklist( char *callstr )
   // Get the date field from the caller ID.
   strncpy( &blacklistEntry[19], &callstr[9], 6 );  
 
-  // Add the source descriptor string ("KEY-5 ENTRY").
+  // Add the source descriptor string ("KEY-* ENTRY").
   strncpy( &blacklistEntry[33], srcDesc, strlen(srcDesc) );
 
   // Null-terminate the string.

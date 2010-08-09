@@ -20,7 +20,7 @@
  *	           <http://www.gnu.org/licenses/>.
  *
  *	Functions to input audio from a microphone and detect the presence
- *	of tones (770 Hz and 1336 Hz) produced by pressing the '5' key
+ *	of tones (941 Hz and 1209 Hz) produced by pressing the star (*) key
  *	on a touch tone telephone.
  *
  *	Audio recording based on:
@@ -34,19 +34,21 @@
  *	Choosing N, the block size (N = SAMPLING_RATE/BIN_WIDTH):
  *	  Objective is to choose N such that the tone frequency is in
  *	  the center of a bin.
- *	    For 770 Hz, try N = 400:
- *	     BIN_WIDTH = 8000.0/400 = 20 Hz; 770/20 = 38.5;
- *	     38*20 = 760; 39*20 = 780, so 770 is in the center.
- *	    For 1336 Hz, try N = 200:
- *	     BIN_WIDTH = 8000.0/200 = 40 Hz; 1336/20 = 33.40;
- *	     33*40 = 1320; 34*40 = 1360, so 1336 is close to center.
+ *	    For 941 Hz, try N = 259:
+ *	     BIN_WIDTH = 8000.0/259 = 30.89 Hz; 941/30.89 = 30.46;
+ *	     30*30.89 = 926.70; 31*30.89 = 957.59, so 941 is close to the
+ *	     center.
+ *	    For 1209 Hz, try N = 195:
+ *	     BIN_WIDTH = 8000.0/195 = 41.03 Hz; 1209/41.03 = 29.47;
+ *	     29*41.03 = 1189.87; 30*41.03 = 1230.90, so 1209 is close to
+ *	     the center.
  *
  *	Choosing THRESHOLD:
  *	   Objective is to put THRESHOLD safely above the non-detection
  *	   amplitudes and below the detection amplitudes. From the
  *	   program's printf outputs, you can determine a safe threshold
- *	   that will work for both tones when key '5' is pressed. The
- *	   value depends on how close the microphone is to the speaker
+ *	   that will work for both tones when the star (*) key is pressed.
+ *	   The value depends on how close the microphone is to the speaker
  *	   and therefore will vary for different hardware systems.
  *	   For my system a value of 10 worked. You may have to adjust
  *	   this value to get the program to work with your computer.
@@ -72,13 +74,13 @@
 
 #define SAMPLING_RATE           8000.0		//8kHz
 
-/* Low tone (770 Hz) parameters */
-#define TARGET_FREQ_LO		770.0		//770 Hz
-#define N_LO                    400             //770 Hz block size
+/* Low tone (941 Hz) parameters */
+#define TARGET_FREQ_LO		941.0		//941 Hz
+#define N_LO                    259             //941 Hz block size
 
-/* High (1336 Hz) tone parameters */
-#define TARGET_FREQ_HI         1336.0           //1336 Hz
-#define N_HI                    200             //1336 Hz block size
+/* High (1209 Hz) tone parameters */
+#define TARGET_FREQ_HI         1209.0           //1209 Hz
+#define N_HI                    195             //1209 Hz block size
 
 #define THRESHOLD                10
 #define BLK_CTR_MAX              10
@@ -388,7 +390,7 @@ bool tonesPoll()
   /* Require both tones to be detected to declare a final detection */
   if( det_lo && det_hi )
   {
-    printf("Key '5' press detected\n");
+    printf("Key '*' press detected\n");
     return TRUE;
   }
 
@@ -407,8 +409,8 @@ void tonesClose()
 // Compile it with:
 //     gcc -o tones tones.c -lasound -ldl -lm
 // It may then be tested by attaching a microphone to a telephone ear piece
-// and pressing key '5' while the program is running. The output should
-// indicate that both tones were detected (show TRUE).
+// and pressing the star (*) key while the program is running. The output
+// should indicate that both tones were detected (show TRUE).
 int main()
 {
   int blockNum = 0;

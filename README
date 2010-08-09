@@ -33,17 +33,17 @@
   
         An additional feature is supported by functions in file tones.c.
         The program will add a record to the blacklist.dat file for the
-        current call if the operator presses key '5' on a touch tone
-        telephone handset during an allotted time period. The program
-        detects the tone via a microphone placed near the modem speaker.
-        Functions in file tones.c detect the presence of tones (770 Hz
-        and 1336 Hz) produced by pressing the '5' key.
+        current call if the operator presses the star (*, asterick) key on
+	a touch tone telephone handset during an allotted time period. The
+	program detects the tone via a microphone placed near the modem
+	speaker.  Functions in file tones.c detect the presence of tones
+	(941 Hz and 1209 Hz) produced by pressing the star (*) key.
   
         The program requires a serial modem that can deliver caller
         ID and contains a speaker. The modem used for testing was a Zoom
         model 3048. It will return caller ID if it is sent command:
         AT+VCID=1. Note that the modem is used just to detect a call's
-        caller ID and key '5' tones; the modem's normal communication
+        caller ID and the star key tones; the modem's normal communication
         function is not used. The program may be terminated by sending
         it a SIGINT (Ctrl-C) signal or a SIGKILL signal.
   
@@ -129,8 +129,8 @@
 	system shown draws about 6 watts, so the cost of running it 24/7
 	is minimal. The eBox came with a version of Linux installed that
 	did not have the ALSA audio interface. Since this application
-	requires a microphone to implement the key '5' feature, I chose to
-	boot a stripped down version of Knoppix from a USB memory stick.
+	requires a microphone to implement the star (*) key feature, I chose
+	to boot a stripped down version of Knoppix from a USB memory stick.
 
 	I started with the version included on a DVD with the book:
 	"KNOPPIX HACKS, 2nd Edition", O'Reilly, ISBN:978-0-596-51493-8
@@ -141,7 +141,7 @@
 	in a knoppix.iso file which I then used to make USB boot version
 	using a procedure I found at:
 		http://www.knoppix.net/wiki/USB_Based_FAQ
-	Note that if you don't need the key '5' feature, the program will
+	Note that if you don't need the star key feature, the program will
 	run just fine on the version of Linux that comes with the eBox.
 	The Knoppix version has the additional advantage that the gcc
 	compiler, libraries and include files needed to compile the program
@@ -200,7 +200,7 @@
         terminating calls. If you do that anyway then you are all set!
         Otherwise you should eventually consider installing it on a dedicated
         low power embedded computer system similar to the one I described
-	above. If your PC does not have a serial port, a PCI serial port card
-	can be installed at minimal expense.
+	above. If your PC does not have a serial port, a PCI or USB serial
+	port device can be installed at minimal expense.
 
 

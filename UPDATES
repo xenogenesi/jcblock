@@ -46,4 +46,18 @@
 	printf and fprintf arguments were made in jcblock.c to satisfy more
 	strict type checking by recent versions of gcc.
 	
+	30 July, 2010: Added #ifdef's to allow conditional compile
+	----------------------------------------------------------
 
+	Added Do_TONES and DO_TRUNCATE #ifdef's to allow a user to compile
+	the program with/without these features.
+
+	9 August, 2010: Switched from the 5 key to the * key to avoid conflict
+	--------------------------------------------------------------
+
+	It is possible that an automatic caller would present a list of
+	choices that included the 5 key ("press 1 for...press 5 for..."). If the
+	listener pressed the 5 key a blacklist entry for the caller would get
+	generated (if pressed within the listening window). To avoid this, the
+	key was switched to the star (*, asterisk) key, which is (almost) never
+	used.
