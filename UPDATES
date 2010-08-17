@@ -61,3 +61,13 @@
 	generated (if pressed within the listening window). To avoid this, the
 	key was switched to the star (*, asterisk) key, which is (almost) never
 	used.
+
+	17 August, 2010: Added code to handle non-standard caller ID fields
+	-------------------------------------------------------------------
+
+	Sometimes a call is received in which the NMBR field is not ten digits
+	and/or the NAME field is not 15 ASCII characters. Example:
+	--DATE = 081310--TIME = 1930--NMBR = 0--NAME = Unknown--
+	Some changes had to be made to the way the KEY-* code constructed a
+	blacklist.dat record for this case.
+
