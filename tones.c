@@ -50,7 +50,7 @@
  *	   that will work for both tones when the star (*) key is pressed.
  *	   The value depends on how close the microphone is to the speaker
  *	   and therefore will vary for different hardware systems.
- *	   For my system a value of 10 worked. You may have to adjust
+ *	   For my system a value of 40 worked. You may have to adjust
  *	   this value to get the program to work with your computer.
  *	   So far I haven't been able to figure out how to control
  *	   mic sample amplitude (volume) in ALSA (hint: have to look
@@ -82,7 +82,7 @@
 #define TARGET_FREQ_HI         1209.0           //1209 Hz
 #define N_HI                    195             //1209 Hz block size
 
-#define THRESHOLD                10
+#define THRESHOLD                40
 #define BLK_CTR_MAX              10
 
 #define PI			3.14159265
@@ -390,7 +390,7 @@ bool tonesPoll()
   /* Require both tones to be detected to declare a final detection */
   if( det_lo && det_hi )
   {
-    printf("Key '*' press detected\n");
+    printf("KEY-* press detected\n");
     return TRUE;
   }
 
