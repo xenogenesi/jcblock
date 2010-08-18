@@ -50,11 +50,10 @@
  *	   that will work for both tones when the star (*) key is pressed.
  *	   The value depends on how close the microphone is to the speaker
  *	   and therefore will vary for different hardware systems.
- *	   For my system a value of 40 worked. You may have to adjust
- *	   this value to get the program to work with your computer.
- *	   So far I haven't been able to figure out how to control
- *	   mic sample amplitude (volume) in ALSA (hint: have to look
- *	   at the amixer source code). This threshold value works in
+ *	   You may have to adjust the value to get the program to work
+ *	   with your computer. So far I haven't been able to figure out how
+ *	   to control mic sample amplitude (volume) in ALSA (hint: have to
+ *	   look at the amixer source code). This threshold value works in
  *	   most cases.
  */
 #include <stdio.h>
@@ -82,8 +81,8 @@
 #define TARGET_FREQ_HI         1209.0           //1209 Hz
 #define N_HI                    195             //1209 Hz block size
 
-#define THRESHOLD                40
-#define BLK_CTR_MAX              10
+#define THRESHOLD                30
+#define BLK_CTR_MAX              5
 
 #define PI			3.14159265
 

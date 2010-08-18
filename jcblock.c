@@ -850,8 +850,8 @@ bool write_blacklist( char *callstr )
   char blackbuf[100];
   char blacklistEntry[80];
   char *srcDesc = "KEY-* ENTRY";
-  char *nameStr;
-  int nameStrLength;
+  char *nameStr, *nmbrStr, *nmbrStrEnd;
+  int nameStrLength, nmbrStrLength;
   int i;
   char yearStr[10];
 
@@ -881,64 +881,84 @@ bool write_blacklist( char *callstr )
     blacklistEntry[i] = ' ';
   }
 
-  // If the NAME string does not contain "Cell Phone", use it as the
+  // If the NAME field does not contain "Cell Phone", use it as the
   // match string. If it does, use the call's number instead.
-  // Cell phone calls generally contain a "generic" description
-  // string. ("Cell Phone   XX", where XX is the state ID (e.g., MI for
-  // Michigan)). If that string is used in the blacklist record, all
-  // cell phone calls from that state would be blocked!
+  // Note: Cell phone calls generally contain a "generic" NAME
+  // field: "Cell Phone   XX", where XX is the state ID (e.g., MI for
+  // Michigan). If that field was used in the blacklist record, all
+  // cell phone calls from that state would be blocked! So we use the
+  // call's number instead in those cases.
   //
-  // First find the beginning of the NAME string field and its length
-  // (for calls with a NMBR field that is not ten characters long, the
-  // NAME field position and length are not standard).
+  // For some caller ID strings, the NMBR and NAME fields are not the
+  // standard lengths (10 and 15, respectively). So we need to calculate
+  // their positions and lengths.
+  //
+  // Find the start of the "NAME = " string.
   if( ( nameStr = strstr( callstr, "NAME = " ) ) == NULL )
   {
-    printf( "write_blacklist: strstr() failed\n" );
+    printf( "write_blacklist: strstr(..., \"NAME = \" ) failed\n" );
     return FALSE;
+  }
+
+  // Find the start of the "NMBR = " string.
+  if( ( nmbrStr = strstr( callstr, "NMBR = " ) ) == NULL )
+  {
+    printf( "write_blacklist: strstr(..., \"NMBR = \" ) failed\n" );
+    return FALSE;
+  }
+
+  // While here, find a pointer to the character after the NMBR
+  // string field (subtract  2 from nameStr for the "--" separater)
+  nmbrStrEnd = nameStr - 2;
+
+  // Find the start of the NAME string field.
+  nameStr += strlen( "NAME = " );
+
+  // Find the start of the NMBR string field.
+  nmbrStr += strlen( "NMBR = " );
+
+  // Find the length of the NAME string field (subtract 3 for the
+  // "--\n" at  its end).
+  nameStrLength = strlen( nameStr ) - 3;
+
+  // Find the length of the NMBR string field.
+  nmbrStrLength = (int)(nmbrStrEnd - nmbrStr);
+
+  // Now build the new blacklist entry.
+  // Put a '\n' at the start of the string.
+  blacklistEntry[0] = '\n';
+
+  // See if the NAME field starts with "Cell Phone".
+  if( strstr( nameStr, "Cell Phone" ) != NULL )
+  {
+    // If it does, use the NMBR field instead.
+    strncpy( &blacklistEntry[1], &callstr[37], nmbrStrLength );
+    blacklistEntry[ nmbrStrLength + 1] = '?'; // Add the terminator
   }
   else
   {
-    // Add the length of the "NAME = " string.
-    nameStr += strlen( "NAME = " );
-    // Find the length of the field (subtract 3 for the "--\n" at
-    // its end.
-    nameStrLength = strlen( nameStr ) - 3;
-
-    // Put a '\n' at the start of the string.
-    blacklistEntry[0] = '\n';
-
-    // Now see if the string is "Cell Phone".
-    if( strstr( nameStr, "Cell Phone" ) != NULL )
-    {
-      // If it is, use the NMBR field instead.
-      strncpy( &blacklistEntry[1], &callstr[37], 10 );
-      blacklistEntry[11] = '?'; // Add the search field terminator
-    }
-    else
-    {
-      // Get the call NAME string field from the caller ID.
-      strncpy( &blacklistEntry[1], nameStr, nameStrLength );
-      blacklistEntry[nameStrLength + 1] = '?'; // Add the terminator
-    }
-
-    // Get the date field from the caller ID.
-    strncpy( &blacklistEntry[20], &callstr[9], 6 );  
-
-    // Add the source descriptor string ("KEY-* ENTRY").
-    strncpy( &blacklistEntry[34], srcDesc, strlen(srcDesc) + 1 );
-
-    // Seek to the end of the file.
-    fseek( fpBl, 0, SEEK_END );
-
-    // Write the new entry to the end of the file.
-    if( fwrite( blacklistEntry, 1, strlen(blacklistEntry), fpBl ) !=
-                                              strlen( blacklistEntry ) )
-    {
-      printf("write_blacklist: fwrite() failed\n");
-      return FALSE;
-    }
-    return TRUE;
+    // Get the call NAME field from the caller ID.
+    strncpy( &blacklistEntry[1], nameStr, nameStrLength );
+    blacklistEntry[nameStrLength + 1] = '?'; // Add the terminator
   }
+
+  // Get the date field from the caller ID.
+  strncpy( &blacklistEntry[20], &callstr[9], 6 );  
+
+  // Add the source descriptor string ("KEY-* ENTRY").
+  strncpy( &blacklistEntry[34], srcDesc, strlen(srcDesc) + 1 );
+
+  // Seek to the end of the file.
+  fseek( fpBl, 0, SEEK_END );
+
+  // Write the new entry to the end of the file.
+  if( fwrite( blacklistEntry, 1, strlen(blacklistEntry), fpBl ) !=
+                                              strlen( blacklistEntry ) )
+  {
+    printf("write_blacklist: fwrite() failed\n");
+    return FALSE;
+  }
+  return TRUE;
 }
 
 //
