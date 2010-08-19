@@ -839,16 +839,18 @@ static bool check_blacklist( char *callstr )
 // If you enter blacklist.dat records manually with some editors (e.g., vi
 // or gedit), the editor adds a '\n' character at the end of the file when
 // the file is closed if you didn't! Some editors don't do this (e.g., emacs).
-// This function starts the record it constructs with a '\n'. So if your editor
-// added one to the end of the blacklist.dat file, you will see a blank line
-// before the entry his function adds. The blank line is ignored by this
-// program. You can manually remove it if you like. If this function adds a
-// record after one it added earlier, there will be no blank line before it.
+// The '\n' character can be in the last or second to last location since the
+// stored length is always even.
+// This function starts the record it constructs with a '\n'. It checks to see
+// if your editor added a '\n' at the end of the file. If one is present, it
+// writes the first character of the new record over it. If not, it appends
+// the new record to the end of the file.
 //
 bool write_blacklist( char *callstr )
 {
   char blackbuf[100];
   char blacklistEntry[80];
+  char readbuf[10];
   char *srcDesc = "KEY-* ENTRY";
   char *nameStr, *nmbrStr, *nmbrStrEnd;
   int nameStrLength, nmbrStrLength;
@@ -948,10 +950,31 @@ bool write_blacklist( char *callstr )
   // Add the source descriptor string ("KEY-* ENTRY").
   strncpy( &blacklistEntry[34], srcDesc, strlen(srcDesc) + 1 );
 
-  // Seek to the end of the file.
-  fseek( fpBl, 0, SEEK_END );
+  // Read the last two characters in the file. If either is a '\n',
+  // seek to its position so the following write will overwrite it.
+  // If a '\n' is not found, seek to the end of the file.
+  fseek( fpBl, -2, SEEK_END );
 
-  // Write the new entry to the end of the file.
+  if( fread( readbuf, 1, 2, fpBl ) != 2 )
+  {
+    printf("write_blacklist: fread() failed\n");
+    return FALSE;
+  }
+
+  if( readbuf[0] == '\n' )
+  {
+    fseek( fpBl, -2, SEEK_END );
+  }
+  else if( readbuf[1] == '\n' )
+  {
+    fseek( fpBl, -1, SEEK_END );
+  }
+  else
+  {
+    fseek( fpBl, 0, SEEK_END );
+  }
+
+  // Write the new record to the file.
   if( fwrite( blacklistEntry, 1, strlen(blacklistEntry), fpBl ) !=
                                               strlen( blacklistEntry ) )
   {
