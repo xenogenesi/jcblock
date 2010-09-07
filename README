@@ -21,7 +21,7 @@
         The program also updates the date field of a matching whitelist or
         blacklist entry. Entries that are old may then be identified so
         that they may be removed. Note that the program will operate with
-        only a whitelist.dat or blacklist.dat file defined.
+        only a blacklist.dat file defined. A whitelist is not required.
   
         Functions to manage the truncation (removal) of records from the
         blacklist.dat and callerID.dat files are present in file truncate.c.
@@ -96,10 +96,12 @@
 	entry. With this arrangement all cell phone calls from the state will
 	be blocked *except* the ones with numbers present in the whitelist.
 
-	In certain cases it might be useful to run the program with just a
-	whitelist or just a blacklist. The program was modified to support
-	these cases. For example, a user might want to *only* accept calls
-	from specific numbers. In that case only a whitelist is needed.
+	As another example, a person might want to receive calls from just
+	certain numbers and no others (an elderly person, for example). In that
+	case the records for the numbers of interest would be placed in the
+	whitelist and a single record placed in the blacklist that contains a
+	field that is present in all caller IDs ( e.g., 'NMBR').  Then all
+	calls not matched by records in the whitelist will be terminated.
 
         Country codes:
 
@@ -200,7 +202,7 @@
         terminating calls. If you do that anyway then you are all set!
         Otherwise you should eventually consider installing it on a dedicated
         low power embedded computer system similar to the one I described
-	above. If your PC does not have a serial port, a PCI or USB serial
-	port device can be installed at minimal expense.
+	above. If your PC does not have a serial port, a PCI serial port card
+	or USB serial port adapter can be installed at minimal expense.
 
 

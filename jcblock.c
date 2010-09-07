@@ -35,7 +35,7 @@
  *	The program also updates the date field of a matching whitelist or
  *	blacklist entry. Entries that are old may then be identified so
  *	that they may be removed. Note that the program will operate with
- *	only a whitelist.dat or blacklist.dat file defined.
+ *	only a blacklist.dat file defined. A whitelist is not required.
  *
  *	Functions to manage the truncation (removal) of records from the
  *	blacklist.dat and callerID.dat files are present in file truncate.c.
@@ -153,21 +153,13 @@ int main(int argc, char **argv)
   // Open the whitelist file (for reading & writing)
   if( (fpWh = fopen( "./whitelist.dat", "r+" ) ) == NULL )
   {
-    printf("fopen() of whitelist.dat failed\n" );
+    printf("fopen() of whitelist.dat failed. A whitelist is not required.\n" );
   }
 
   // Open the blacklist file (for reading & writing)
   if( (fpBl = fopen( "./blacklist.dat", "r+" ) ) == NULL )
   {
-    printf("fopen() of blacklist.dat failed\n" );
-  }
-
-  // If both file opens failed (neither file is present),
-  // return (Note: the program may be run with a whitelist, a
-  // blacklist or both -- but one or the other must be present).
-  if( (fpBl == NULL) && (fpWh == NULL) )
-  {
-    printf( "A blacklist.dat and/or a whitelist.dat file must exist!\n" );
+    printf("fopen() of blacklist.dat failed. A blacklist must exist.\n" );
     return;
   }
 
@@ -414,112 +406,108 @@ int wait_for_response(fd)
         }
       }
 
-      // If a blacklist.dat file is present, compare the
-      // caller ID string to entries in the blacklist. If a match
-      // is found, answer (i.e., terminate) the call.
-      if( fpBl != NULL )
+      // Compare the caller ID string to entries in the blacklist. If
+      // a match is found, answer (i.e., terminate) the call.
+      if( check_blacklist( buffer2 ) == TRUE )
       {
-        if( check_blacklist( buffer2 ) == TRUE )
-        {
-          // Blacklist entry was found.
-          //
+        // Blacklist entry was found.
+        //
 #ifdef DO_TRUNCATE
-          // The following function truncates (removes old) entries
-          // in data files -- if thirty days have elapsed since the
-          // last time it truncated. Entries in callerID.dat are removed
-          // if they are older than one year. Entries in blacklist.dat
-          // are removed if they have not been used to terminate a call
-          // within the last year.
-          // Note: it is not necessary for this function to run for the
-          // main program to operate normally. You may remove it if you
-          // don't want automatic file truncation. All of its code is in
-          // truncate.c.
-          truncate_records();
+        // The following function truncates (removes old) entries
+        // in data files -- if thirty days have elapsed since the
+        // last time it truncated. Entries in callerID.dat are removed
+        // if they are older than one year. Entries in blacklist.dat
+        // are removed if they have not been used to terminate a call
+        // within the last year.
+        // Note: it is not necessary for this function to run for the
+        // main program to operate normally. You may remove it if you
+        // don't want automatic file truncation. All of its code is in
+        // truncate.c.
+        truncate_records();
 #endif                                   // end DO_TRUNCATE
-          continue;
-        }
+        continue;
+      }
 #ifdef DO_TONES
       // At this point the phone will ring until the call has been
       // answered or the caller hangs up (RING strings stop arriving).
       // Listen for a star (*) key press by polling the microphone. If a
       // press is detected (within the timed window), build and add
       // an entry to the blacklist for this call.
-        else
+      else
+      {
+        // Get current time (seconds since Unix Epoch)
+        if( (pollStartTime = time( NULL ) ) == -1 )
         {
-          // Get current time (seconds since Unix Epoch)
-          if( (pollStartTime = time( NULL ) ) == -1 )
-          {
-            printf("time() failed(1)\n");
-            continue;
-          }
-
-          // Reinitialize the serial port for polling
-          close(fd);
-          open_port( OPEN_PORT_POLLED );
-
-          // Now poll until 'RING' strings stop arriving.
-          // Note: seven seconds is just longer than the
-          // inter-ring time (six seconds).
-          while( (pollTime = time( NULL )) < pollStartTime + 7 )
-          {
-            if( ( nbytes = read( fd, bufRing, 1 ) ) > 0 )
-            {
-              if(bufRing[0] == 'R')
-              {
-                pollStartTime  = time( NULL );
-              }
-            }
-            usleep( 100000 );        // 100 msec
-          }
-
-          // Reinitialize the serial port for blocked operation
-          close(fd);
-          open_port( OPEN_PORT_BLOCKED );
-
-          // Poll for a touchtone star (*) key press.
-          //
-          // Send an off-hook modem command so the mic can pick up the tones
-          // generated by the star (*) key press. When the command is sent
-          // the listener hears a "click". That indicates the start of the
-          // timed window when a star (*) key press will be accepted.
-          send_modem_command(fd, "ATH1\r"); // off hook
-
-          // Send on-hook and off-hook commands to produce two more clicks
-          // to aid the listener in detecting the start of the window.
-          // Note that, due to the hardware, the third click is delayed.
-          // If you like, you can omit these two commands and just sound
-          // one click to signal the start of the detection window.
-          send_modem_command(fd, "ATH0\r"); // on hook
-          send_modem_command(fd, "ATH1\r"); // off hook
-
-          // Get current time (seconds since Unix Epoch)
-          if( (pollStartTime = time( NULL ) ) == -1 )
-          {
-            printf("time() failed(2)\n");
-            continue;
-          }
-
-          // Poll for star (*) key press within the timeout window
-          // (ten seconds)
-          while( (pollTime = time( NULL )) < pollStartTime + 10 )
-          {
-            if( tonesPoll() == TRUE )
-            {
-              // Write a caller ID entry to blacklist.dat.
-              write_blacklist( buffer2 );
-              break;
-            }
-          }
-
-          // Re-initialize the modem to return caller ID.
-          // This also produces two clicks to signal the
-          // end of the tone detection window.
-          send_modem_command(fd, "ATZ\r");
-          send_modem_command(fd, "AT+VCID=1\r");
+          printf("time() failed(1)\n");
           continue;
         }
-#endif                          // end DO_TONES
+
+        // Reinitialize the serial port for polling
+        close(fd);
+        open_port( OPEN_PORT_POLLED );
+
+        // Now poll until 'RING' strings stop arriving.
+        // Note: seven seconds is just longer than the
+        // inter-ring time (six seconds).
+        while( (pollTime = time( NULL )) < pollStartTime + 7 )
+        {
+          if( ( nbytes = read( fd, bufRing, 1 ) ) > 0 )
+          {
+            if(bufRing[0] == 'R')
+            {
+              pollStartTime  = time( NULL );
+            }
+          }
+          usleep( 100000 );        // 100 msec
+        }
+
+        // Reinitialize the serial port for blocked operation
+        close(fd);
+        open_port( OPEN_PORT_BLOCKED );
+
+        // Poll for a touchtone star (*) key press.
+        //
+        // Send an off-hook modem command so the mic can pick up the tones
+        // generated by the star (*) key press. When the command is sent
+        // the listener hears a "click". That indicates the start of the
+        // timed window when a star (*) key press will be accepted.
+        send_modem_command(fd, "ATH1\r"); // off hook
+
+        // Send on-hook and off-hook commands to produce two more clicks
+        // to aid the listener in detecting the start of the window.
+        // Note that, due to the hardware, the third click is delayed.
+        // If you like, you can omit these two commands and just sound
+        // one click to signal the start of the detection window.
+        send_modem_command(fd, "ATH0\r"); // on hook
+        send_modem_command(fd, "ATH1\r"); // off hook
+
+        // Get current time (seconds since Unix Epoch)
+        if( (pollStartTime = time( NULL ) ) == -1 )
+        {
+          printf("time() failed(2)\n");
+          continue;
+        }
+
+        // Poll for star (*) key press within the timeout window
+        // (ten seconds)
+        while( (pollTime = time( NULL )) < pollStartTime + 10 )
+        {
+          if( tonesPoll() == TRUE )
+          {
+            // Write a caller ID entry to blacklist.dat.
+            write_blacklist( buffer2 );
+            break;
+          }
+        }
+
+        // Re-initialize the modem to return caller ID.
+        // This also produces two clicks to signal the
+        // end of the tone detection window.
+        send_modem_command(fd, "ATZ\r");
+        send_modem_command(fd, "AT+VCID=1\r");
+        continue;
       }
+#endif                          // end DO_TONES
     }
   }         // end of while()
 }

@@ -71,3 +71,13 @@
 	Some changes had to be made to the way the KEY-* code constructed a
 	blacklist.dat record for this case.
 
+	7 September, 2010 Added code to make sure a blacklist file is present
+	---------------------------------------------------------------------
+
+	I had it so the program would run if only a whitelist.dat was present
+	(no blacklist.dat file). That didn't make sense -- if a call was not
+	caught by a record in the whitelist it got answered anyway. If you
+	want to block all calls not in the whitelist, put a single record in
+	the blacklist that has a caller ID field that is always present (e.g.,
+	'NMBR'). I also updated documentation in the README file.
+
