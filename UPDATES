@@ -81,3 +81,10 @@
 	the blacklist that has a caller ID field that is always present (e.g.,
 	'NMBR'). I also updated documentation in the README file.
 
+	16 September, 2010 Added getopt() call to allow serial port selection
+	--------------------------------------------------------------------
+
+	The default serial port is: /dev/ttyS0. A different port may be specified
+	using call option -p. Example: jcblock -p /dev/portID
+
+

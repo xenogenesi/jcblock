@@ -50,9 +50,15 @@
         The program runs on a standard PC (it was written and tested
         on a Dell Dimension B110 running Ubuntu). The features
         supported by functions in files truncate.c and tones.c may be
-        removed by disabling their function calls in file jcblock.c.
-        The entire program may be compiled with the following command:
-  
+        removed by disabling conditional compile flags DO_TRUNCATE and
+        DO_TONES, respectively, in file jcblock.c. The default serial port
+        specifier is: /dev/ttyS0. The program will accept an option to
+        select a different port. The syntax of the call is:
+
+                jcblock -p /dev/portID
+
+        The entire program may be compiled with the following command: 
+
         gcc -o jcblock jcblock.c tones.c truncate.c -lasound -ldl -lm
   
 	Linux installations may or may not install the libasound library.
@@ -100,8 +106,8 @@
 	certain numbers and no others (an elderly person, for example). In that
 	case the records for the numbers of interest would be placed in the
 	whitelist and a single record placed in the blacklist that contains a
-	field that is present in all caller IDs ( e.g., 'NMBR').  Then all
-	calls not matched by records in the whitelist will be terminated.
+	field that is present in all caller IDs (e.g., 'NMBR'). Then all
+	calls not matched by records in the whitelist would be terminated.
 
         Country codes:
 

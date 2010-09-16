@@ -104,7 +104,10 @@
 #define OPEN_PORT_BLOCKED 1
 #define OPEN_PORT_POLLED  0
 
+// Default serial port specifier.
+char *serialPort = "/dev/ttyS0";
 int fd;                                  // the serial port
+
 FILE *fpWh;                              // whitelist.dat file
 static struct termios options;
 static time_t pollTime, pollStartTime;
@@ -131,10 +134,30 @@ static char *copyright = "\n"
 // Main function
 int main(int argc, char **argv)
 {
-  // set Ctrl-C and kill terminator signal catchers
+  int optChar;
+
+  // Set Ctrl-C and kill terminator signal catchers
   signal( SIGINT, cleanup );
   signal( SIGKILL, cleanup );
-  
+
+  // See if a serial port argument was specified
+  if( argc > 1 )
+  {
+    while( ( optChar = getopt( argc, argv, "p:" ) ) != EOF )
+    {
+      switch( optChar )
+      {
+        case 'p':
+          serialPort = optarg;
+          break;
+
+        default:
+          fprintf( stderr, "Usage: jcblock [-p /dev/<portID>]\n" );
+          _exit(-1);
+      }
+    }
+  }
+
   // Display copyright notice
   printf( "%s", copyright );
 
@@ -1002,9 +1025,9 @@ static void open_port(int mode )
   // Open modem device for reading and writing and not as the controlling
   // tty (so the program does not get terminated if line noise sends CTRL-C).
   //
-  if( ( fd = open("/dev/ttyS0", O_RDWR | O_NOCTTY ) ) < 0 )
+  if( ( fd = open( serialPort, O_RDWR | O_NOCTTY ) ) < 0 )
   {
-    perror("/dev/ttyS0" );
+    perror( serialPort );
     _exit(-1);
   }
   fcntl(fd, F_SETFL, 0);
@@ -1074,7 +1097,7 @@ static void close_open_port( int doCallerID )
 //
 static void cleanup( int signo )
 {
-  printf("\nin cleanup()...\n");
+  printf("\nin cleanup()...wait for kill...\n");
 
   if( modemInitialized )
   {
