@@ -444,8 +444,9 @@ int truncate_blacklist_records()
     }
 
     // Make sure the date field is present and valid (if it was
-    // entered manually it might be in error).
-    if( (strlen( blacklistBuf ) < 25 ) )
+    // entered manually it might be in error). Record must contain
+    // at least 25 characters plus one for the '\n' terminator.
+    if( (strlen( blacklistBuf ) < 26 ) )
     {
       // Just ignore the record
       continue;

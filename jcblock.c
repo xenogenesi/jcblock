@@ -592,90 +592,95 @@ static bool check_whitelist( char *callstr )
       continue;
 
     // Ignore lines containing just a '\n'
-    if( whitebuf[0] != '\n' )
+    if( whitebuf[0] == '\n' )
     {
-      // Save the string (for writing back to the file later)
-      strcpy( whitebufsave, whitebuf );
+      continue;
+    }
 
-      // Make sure a '?' char is present in the string
-      if( ( strptr = strstr( whitebuf, "?" ) ) == NULL )
+    // Ignore records that are too short (don't have room for the date)
+    if( strlen( whitebuf ) < 26 )
+    {
+      printf("ERROR: whitelist.dat record is too short to hold date field.\n");
+      printf("       record: %s", whitebuf);
+      printf("       record is ignored (edit file and fix it).\n");
+      continue;
+    }
+
+    // Save the string (for writing back to the file later)
+    strcpy( whitebufsave, whitebuf );
+
+    // Make sure a '?' char is present in the string
+    if( ( strptr = strstr( whitebuf, "?" ) ) == NULL )
+    {
+      printf("ERROR: all whitelist.dat entry first fields *must be*\n");
+      printf("       terminated with a \'?\' character!! Entry is:\n");
+      printf("       %s", whitebuf);
+      printf("       Entry was ignored!\n");
+      continue;
+    }
+
+    // Make sure the '?' character is within the first twenty characters
+    if( (int)( strptr - whitebuf ) > 18 )
+    {
+      printf("ERROR: terminator '?' is not within first 20 characters\n" );
+      printf("       %s", whitebuf);
+      printf("       Entry was ignored!\n");
+      continue;
+    }
+
+    // Get a pointer to the search token in the string
+    if( ( whitebufptr = strtok( whitebuf, "?" ) ) == NULL )
+    {
+      printf("whitebuf strtok() failed\n");
+      return(TRUE);         // accept the call
+    }
+
+    // Scan the call string for the whitelist entry
+    if( strstr( callstr, whitebufptr ) != NULL )
+    {
+#ifdef DEBUG
+      printf("whitelist entry matches: %s\n", whitebuf );
+#endif
+      // Make sure the 'DATE = ' field is present
+      if( (dateptr = strstr( callstr, "DATE = " ) ) == NULL )
       {
-        printf("ERROR: all whitelist.dat entry first fields *must be*\n");
-        printf("       terminated with a \'?\' character!! Entry is:\n");
-        printf("       %s", whitebuf);
-        printf("       Entry was ignored!\n");
-        continue;
+        printf( "DATE field not found in caller ID!\n" );
+        return(TRUE);     // accept the call
       }
 
-      // Make sure the '?' character is within the first twenty characters
-      if( (int)( strptr - whitebuf ) > 18 )
-      {
-        printf("ERROR: terminator '?' is not within first 20 characters\n" );
-        printf("       %s", whitebuf);
-        printf("       Entry was ignored!\n");
-        continue;
-      }
+      // Get the current date from the caller ID string
+      strncpy( call_date, &dateptr[7], 6 );
 
-      // Get a pointer to the search token in the string
-      if( ( whitebufptr = strtok( whitebuf, "?" ) ) == NULL )
+      // Terminate the string
+      call_date[6] = 0;
+
+      // Update the date in the whitebufsave record
+      strncpy( &whitebufsave[19], call_date, 6 );
+
+      // Write the record back to the whitelist.dat file
+      fseek( fpWh, file_pos_last, SEEK_SET );
+      if( fputs( whitebufsave, fpWh ) == EOF )
       {
-        printf("whitebuf strtok() failed\n");
+        printf("fputs(whitebufsave, fpWh) failed\n" );
         return(TRUE);         // accept the call
       }
 
-      // Scan the call string for the whitelist entry
-      if( strstr( callstr, whitebufptr ) != NULL )
+      // Flush the string to the file
+      if( fflush(fpWh) == EOF )
       {
-#ifdef DEBUG
-        printf("whitelist entry matches: %s\n", whitebuf );
-#endif
-        // Make sure the string is long enough to hold the date
-        if( strlen( whitebufsave ) >= 26 )
-        {
-          // Make sure the 'DATE = ' field is present
-          if( (dateptr = strstr( callstr, "DATE = " ) ) == NULL )
-          {
-            printf( "DATE field not found in caller ID!\n" );
-            return(TRUE);     // accept the call
-          }
-
-          // Get the current date from the caller ID string
-          strncpy( call_date, &dateptr[7], 6 );
-
-          // Terminate the string
-          call_date[6] = 0;
-
-          // Update the date in the whitebufsave record
-          strncpy( &whitebufsave[19], call_date, 6 );
-
-          // Write the record back to the whitelist.dat file
-          fseek( fpWh, file_pos_last, SEEK_SET );
-          if( fputs( whitebufsave, fpWh ) == EOF )
-          {
-            printf("fputs(whitebufsave, fpWh) failed\n" );
-            return(TRUE);         // accept the call
-          }
-
-          // Flush the string to the file
-          if( fflush(fpWh) == EOF )
-          {
-            printf("fflush(fpWh) failed\n");
-            return(TRUE);         // accept the call
-          }
-
-          // Force kernel file buffers to the disk
-          // (probably not necessary)
-          sync();
-        }
-        else
-        {
-          printf("Date not saved; whitelist.dat entry too short!\n" );
-        }
-        // A whitelist.dat entry matched, so return TRUE
-        return(TRUE);             // accept the call
+        printf("fflush(fpWh) failed\n");
+        return(TRUE);         // accept the call
       }
+
+      // Force kernel file buffers to the disk
+      // (probably not necessary)
+      sync();
+
+      // A whitelist.dat entry matched, so return TRUE
+      return(TRUE);             // accept the call
     }
   }                               // end of while()
+
   // No whitelist.dat entry matched, so return FALSE.
   return(FALSE);
 }
@@ -739,126 +744,131 @@ static bool check_blacklist( char *callstr )
       continue;
 
     // Ignore lines containing just a '\n'
-    if( blackbuf[0] != '\n' )
+    if( blackbuf[0] == '\n' )
     {
-      // Save the string (for writing back to the file later)
-      strcpy( blackbufsave, blackbuf );
+      continue;
+    }
 
-      // Make sure a '?' char is present in the string
-      if( ( strptr = strstr( blackbuf, "?" ) ) == NULL )
-      {
-        printf("ERROR: all blacklist.dat entry first fields *must be*\n");
-        printf("       terminated with a \'?\' character!! Entry is:\n");
-        printf("       %s", blackbuf);
-        printf("       Entry was ignored!\n");
-        continue;
-      }
+    // Ignore records that are too short (don't have room for the date)
+    if( strlen( blackbuf ) < 26 )
+    {
+       printf("ERROR: blacklist.dat record is too short to hold date field.\n");
+       printf("       record: %s", blackbuf );
+       printf("       record is ignored (edit file and fix it).\n");
+       continue;
+    }
 
-      // Make sure the '?' character is within the first twenty characters
-      // (could not be if the previous record was only partially written).
-      if( (int)( strptr - blackbuf ) > 18 )
-      {
-        printf("ERROR: terminator '?' is not within first 20 characters\n" );
-        printf("       %s", blackbuf);
-        printf("       Entry was ignored!\n");
-        continue;
-     }
+    // Save the string (for writing back to the file later)
+    strcpy( blackbufsave, blackbuf );
 
-      // Get a pointer to the search token in the string
-      if( ( blackbufptr = strtok( blackbuf, "?" ) ) == NULL )
+    // Make sure a '?' char is present in the string
+    if( ( strptr = strstr( blackbuf, "?" ) ) == NULL )
+    {
+      printf("ERROR: all blacklist.dat entry first fields *must be*\n");
+      printf("       terminated with a \'?\' character!! Entry is:\n");
+      printf("       %s", blackbuf);
+      printf("       Entry was ignored!\n");
+      continue;
+    }
+
+    // Make sure the '?' character is within the first twenty characters
+    // (could not be if the previous record was only partially written).
+    if( (int)( strptr - blackbuf ) > 18 )
+    {
+      printf("ERROR: terminator '?' is not within first 20 characters\n" );
+      printf("       %s", blackbuf);
+      printf("       Entry was ignored!\n");
+      continue;
+    }
+
+    // Get a pointer to the search token in the string
+    if( ( blackbufptr = strtok( blackbuf, "?" ) ) == NULL )
+    {
+      printf("blackbuf strtok() failed\n");
+      return(FALSE);
+    }
+
+    // Scan the call string for the blacklist entry
+    if( strstr( callstr, blackbufptr ) != NULL )
+    {
+#ifdef DEBUG
+      printf("blacklist entry matches: %s\n", blackbuf );
+#endif
+      // At this point, the modem is in data mode. It must
+      // be returned to command mode to send it the off-hook
+      // and on-hook commands. For the modem used, command
+      // 'AT+++' did not work. The only way I could find to
+      // put it back in command mode was to close, open and
+      // reinitialize the connection. This clears the DTR line
+      // which resets the modem to command mode. To accomplish
+      // this in time (before the next ring), the caller ID
+      // command is not sent. Later, the modem is again
+      // reinitialized with caller ID activated. This is all
+      // kind of crude, but it works...
+      close_open_port( CALLERID_NO );
+
+      usleep( 500000 );   // half second
+
+      // Send off hook command
+#ifdef DEBUG
+      printf("sending off hook\n");
+#endif
+      send_modem_command(fd, "ATH1\r");
+
+      sleep(1);
+
+      // Send on hook command
+#ifdef DEBUG
+      printf("sending on hook\n");
+#endif
+      send_modem_command(fd, "ATH0\r");
+
+      sleep(1);
+
+      // Now, to prepare for the next call, close and reopen
+      // the port with caller ID activated.
+      close_open_port( CALLERID_YES );
+
+      // Make sure the 'DATE = ' field is present
+      if( (dateptr = strstr( callstr, "DATE = " ) ) == NULL )
       {
-        printf("blackbuf strtok() failed\n");
+        printf( "DATE field not found in caller ID!\n" );
         return(FALSE);
       }
 
-      // Scan the call string for the blacklist entry
-      if( strstr( callstr, blackbufptr ) != NULL )
+      // Get the current date from the caller ID string
+      strncpy( call_date, &dateptr[7], 6 );
+
+      // Terminate the string
+      call_date[6] = 0;
+
+      // Update the date in the blackbufsave record
+      strncpy( &blackbufsave[19], call_date, 6 );
+
+      // Write the record back to the blacklist.dat file
+      fseek( fpBl, file_pos_last, SEEK_SET );
+      if( fputs( blackbufsave, fpBl ) == EOF )
       {
-#ifdef DEBUG
-        printf("blacklist entry matches: %s\n", blackbuf );
-#endif
-        // At this point, the modem is in data mode. It must
-        // be returned to command mode to send it the off-hook
-        // and on-hook commands. For the modem used, command
-        // 'AT+++' did not work. The only way I could find to
-        // put it back in command mode was to close, open and
-        // reinitialize the connection. This clears the DTR line
-        // which resets the modem to command mode. To accomplish
-        // this in time (before the next ring), the caller ID
-        // command is not sent. Later, the modem is again
-        // reinitialized with caller ID activated. This is all
-        // kind of crude, but it works...
-        close_open_port( CALLERID_NO );
-
-        usleep( 500000 );   // half second
-
-        // Send off hook command
-#ifdef DEBUG
-        printf("sending off hook\n");
-#endif
-        send_modem_command(fd, "ATH1\r");
-
-        sleep(1);
-
-        // Send on hook command
-#ifdef DEBUG
-        printf("sending on hook\n");
-#endif
-        send_modem_command(fd, "ATH0\r");
-
-        sleep(1);
-
-        // Now, to prepare for the next call, close and reopen
-        // the port with caller ID activated.
-        close_open_port( CALLERID_YES );
-
-        // Make sure the string is long enough to hold the date
-        if( strlen( blackbufsave ) >= 26 )
-        {
-          // Make sure the 'DATE = ' field is present
-          if( (dateptr = strstr( callstr, "DATE = " ) ) == NULL )
-          {
-            printf( "DATE field not found in caller ID!\n" );
-            return(FALSE);
-          }
-
-          // Get the current date from the caller ID string
-          strncpy( call_date, &dateptr[7], 6 );
-
-          // Terminate the string
-          call_date[6] = 0;
-
-          // Update the date in the blackbufsave record
-          strncpy( &blackbufsave[19], call_date, 6 );
-
-          // Write the record back to the blacklist.dat file
-          fseek( fpBl, file_pos_last, SEEK_SET );
-          if( fputs( blackbufsave, fpBl ) == EOF )
-          {
-            printf("fputs(blackbufsave, fpBl) failed\n" );
-            return(FALSE);
-          }
-
-          // Flush the string to the file
-          if( fflush(fpBl) == EOF )
-          {
-            printf("fflush(fpBl) failed\n");
-            return(FALSE);
-          }
-
-          // Force kernel file buffers to the disk
-          // (probably not necessary)
-          sync();
-        }
-        else
-        {
-          printf("Date not saved; blacklist.dat entry too short!\n" );
-        }
-        // A blacklist.dat entry matched, so return TRUE
-        return(TRUE);
+        printf("fputs(blackbufsave, fpBl) failed\n" );
+        return(FALSE);
       }
+
+      // Flush the string to the file
+      if( fflush(fpBl) == EOF )
+      {
+        printf("fflush(fpBl) failed\n");
+        return(FALSE);
+      }
+
+      // Force kernel file buffers to the disk
+      // (probably not necessary)
+      sync();
+
+      // A blacklist.dat entry matched, so return TRUE
+      return(TRUE);
     }
-  }
+  }                                         // end of while()
+
   /* A blacklist.dat entry was not matched, so return FALSE */
   return(FALSE);
 }

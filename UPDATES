@@ -87,4 +87,10 @@
 	The default serial port is: /dev/ttyS0. A different port may be specified
 	using call option -p. Example: jcblock -p /dev/portID
 
+	21 September, 2010 Added code to check for malformed list records
+	-----------------------------------------------------------------
 
+	blacklist.dat and whitelist.dat records must contain room for the date
+	field (so the date can be written to them). If a record does not contain
+	the required 26 characters (25 + a '\n'), the record is ignored and an
+	error message is printed.
