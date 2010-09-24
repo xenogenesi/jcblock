@@ -94,3 +94,18 @@
 	field (so the date can be written to them). If a record does not contain
 	the required 26 characters (25 + a '\n'), the record is ignored and an
 	error message is printed.
+
+	24 September, 2010 Fixed conflict with telephone answering machines.
+	--------------------------------------------------------------------
+
+	Most answering machines are designed to terminate recording when any
+	phone on the called line is picked up. The star key feature takes the
+	modem off-hook to listen for a key press. This terminates the answering
+	machine's record operation. To avoid this, the program was modified so
+	that the star key feature is active only if the phone is answered after
+	the third ring (normal operation, since the third ring indicates that
+	the call was not blocked). If the answering machine is then set to pick
+	up after the fourth ring (most people to this), no conflict occurs. If
+	this is not acceptable, the star key feature may be disabled altogether
+	with a compile option flag.
+

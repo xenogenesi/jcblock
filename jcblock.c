@@ -113,6 +113,7 @@ static struct termios options;
 static time_t pollTime, pollStartTime;
 static bool modemInitialized = FALSE;
 static bool inBlockedReadCall = FALSE;
+static int numRings;
 
 static void cleanup( int signo );
 
@@ -352,143 +353,158 @@ int wait_for_response(fd)
     printf("nbytes: %d, str: %s", nbytes, buffer );
 #endif
 
-    // A string was received. If its a call
-    // string, write the string to callerID.dat file.
-    // Ignore 'RING' strings.
-    if( strstr( buffer, "RING" ) == NULL )
+    // A string was received. If its a 'RING' string, just ignore it.
+    if( strstr( buffer, "RING" ) != NULL )
     {
-      // The DATE field does not contain the year. Compute the
-      // year and insert it.
-      if( time( &currentTime ) == -1 )
-      {
-        printf("time() failed\n" );
-        return -1;
-      }
+      continue;
+    }
 
-      tmPtr = localtime( &currentTime );
-      currentYear = tmPtr->tm_year -100;  // years since 2000
+    // Caller ID data was received after the first ring.
+    numRings = 1;
 
-      if( sprintf( curYear, "%02d", currentYear ) != 2 )
-      {
-        printf( "sprintf() failed\n" );
-        return -1;
-      }
+    // A caller ID string was constructed. Write it to the
+    // callerID.dat file.
+    // 
+    // The DATE field does not contain the year. First compute the
+    // year and insert it.
+    if( time( &currentTime ) == -1 )
+    {
+      printf("time() failed\n" );
+      return -1;
+    }
 
-      // Zero a new buffer with room for the year.
-      for( i = 0; i < 100; i++ )
-      {
-        buffer2[i] = 0;
-      }
+    tmPtr = localtime( &currentTime );
+    currentYear = tmPtr->tm_year -100;  // years since 2000
 
-      // Fill it but leave room for the year
-      for( i = 0; i < 13; i++ )
-      {
-        buffer2[i] = buffer[i];
-      }
-      for( i = 13; i < nbytes + 1; i++ )
-      {
-        buffer2[i + 2] = buffer[i];
-      }
+    if( sprintf( curYear, "%02d", currentYear ) != 2 )
+    {
+      printf( "sprintf() failed\n" );
+      return -1;
+    }
 
-      // Insert the year characters.
-      buffer2[13] = curYear[0];
-      buffer2[14] = curYear[1];
+    // Zero a new buffer with room for the year.
+    for( i = 0; i < 100; i++ )
+    {
+      buffer2[i] = 0;
+    }
 
-      // Close and re-open file 'callerID.dat' (in case it was
-      // edited while the program was running!).
-      fclose(fpCa);
-      if( (fpCa = fopen( "./callerID.dat", "a+" ) ) == NULL )
-      {
-        printf("re-fopen() of callerID.dat failed\n");
-        return(-1);
-      }
+    // Fill it but leave room for the year
+    for( i = 0; i < 13; i++ )
+    {
+      buffer2[i] = buffer[i];
+    }
+    for( i = 13; i < nbytes + 1; i++ )
+    {
+      buffer2[i + 2] = buffer[i];
+    }
 
-      // Write the record to the file
-      if( fprintf( fpCa, (const char *)buffer2 ) < 0 )
-      {
-        printf("fprintf() failed\n");
-        return(-1);
-      }
+    // Insert the year characters.
+    buffer2[13] = curYear[0];
+    buffer2[14] = curYear[1];
 
-      // Flush the record to the file
-      if( fflush(fpCa) == EOF )
-      {
-        printf("fflush(fpCa) failed\n");
-        return(-1);
-      }
-      // If a whitelist.dat file was present, compare the
-      // caller ID string to entries in the whitelist. If a match
-      // is found, accept the call and bypass the blacklist check.
-      if( fpWh != NULL )
-      {
-        if( check_whitelist( buffer2 ) == TRUE )
-        {
-          // Caller ID match was found (or an error occurred),
-          // so accept the call
-          continue;
-        }
-      }
+    // Close and re-open file 'callerID.dat' (in case it was
+    // edited while the program was running!).
+    fclose(fpCa);
+    if( (fpCa = fopen( "./callerID.dat", "a+" ) ) == NULL )
+    {
+      printf("re-fopen() of callerID.dat failed\n");
+      return(-1);
+    }
 
-      // Compare the caller ID string to entries in the blacklist. If
-      // a match is found, answer (i.e., terminate) the call.
-      if( check_blacklist( buffer2 ) == TRUE )
+    // Write the record to the file
+    if( fprintf( fpCa, (const char *)buffer2 ) < 0 )
+    {
+      printf("fprintf() failed\n");
+      return(-1);
+    }
+
+    // Flush the record to the file
+    if( fflush(fpCa) == EOF )
+    {
+      printf("fflush(fpCa) failed\n");
+      return(-1);
+    }
+
+    // If a whitelist.dat file was present, compare the
+    // caller ID string to entries in the whitelist. If a match
+    // is found, accept the call and bypass the blacklist check.
+    if( fpWh != NULL )
+    {
+      if( check_whitelist( buffer2 ) == TRUE )
       {
-        // Blacklist entry was found.
-        //
-#ifdef DO_TRUNCATE
-        // The following function truncates (removes old) entries
-        // in data files -- if thirty days have elapsed since the
-        // last time it truncated. Entries in callerID.dat are removed
-        // if they are older than one year. Entries in blacklist.dat
-        // are removed if they have not been used to terminate a call
-        // within the last year.
-        // Note: it is not necessary for this function to run for the
-        // main program to operate normally. You may remove it if you
-        // don't want automatic file truncation. All of its code is in
-        // truncate.c.
-        truncate_records();
-#endif                                   // end DO_TRUNCATE
+        // Caller ID match was found (or an error occurred),
+        // so accept the call
         continue;
       }
+    }
+
+    // Compare the caller ID string to entries in the blacklist. If
+    // a match is found, answer (i.e., terminate) the call.
+    if( check_blacklist( buffer2 ) == TRUE )
+    {
+      // Blacklist entry was found.
+      //
+#ifdef DO_TRUNCATE
+      // The following function truncates (removes old) entries
+      // in data files -- if thirty days have elapsed since the
+      // last time it truncated. Entries in callerID.dat are removed
+      // if they are older than one year. Entries in blacklist.dat
+      // are removed if they have not been used to terminate a call
+      // within the last year.
+      // Note: it is not necessary for this function to run for the
+      // main program to operate normally. You may remove it if you
+      // don't want automatic file truncation. All of its code is in
+      // truncate.c.
+      truncate_records();
+#endif                            // end DO_TRUNCATE
+      continue;
+    }
 #ifdef DO_TONES
-      // At this point the phone will ring until the call has been
-      // answered or the caller hangs up (RING strings stop arriving).
-      // Listen for a star (*) key press by polling the microphone. If a
-      // press is detected (within the timed window), build and add
-      // an entry to the blacklist for this call.
-      else
+    // At this point the phone will ring until the call has been
+    // answered or the caller hangs up (RING strings stop arriving).
+    // Listen for a star (*) key press by polling the microphone. If
+    // a press is detected (within the timed window), build and add
+    // an entry to the blacklist for this call.
+    else
+    {
+      // Get current time (seconds since Unix Epoch)
+      if( (pollStartTime = time( NULL ) ) == -1 )
       {
-        // Get current time (seconds since Unix Epoch)
-        if( (pollStartTime = time( NULL ) ) == -1 )
-        {
-          printf("time() failed(1)\n");
-          continue;
-        }
+        printf("time() failed(1)\n");
+        continue;
+      }
 
-        // Reinitialize the serial port for polling
-        close(fd);
-        open_port( OPEN_PORT_POLLED );
+      // Reinitialize the serial port for polling
+      close(fd);
+      open_port( OPEN_PORT_POLLED );
 
-        // Now poll until 'RING' strings stop arriving.
-        // Note: seven seconds is just longer than the
-        // inter-ring time (six seconds).
-        while( (pollTime = time( NULL )) < pollStartTime + 7 )
+      // Now poll until 'RING' strings stop arriving.
+      // Note: seven seconds is just longer than the
+      // inter-ring time (six seconds).
+      while( (pollTime = time( NULL )) < pollStartTime + 7 )
+      {
+        if( ( nbytes = read( fd, bufRing, 1 ) ) > 0 )
         {
-          if( ( nbytes = read( fd, bufRing, 1 ) ) > 0 )
+          if(bufRing[0] == 'R')
           {
-            if(bufRing[0] == 'R')
-            {
-              pollStartTime  = time( NULL );
-            }
+            pollStartTime  = time( NULL );
+            numRings++;                   // count the ring
           }
-          usleep( 100000 );        // 100 msec
         }
+        usleep( 100000 );        // 100 msec
+      }
 
-        // Reinitialize the serial port for blocked operation
-        close(fd);
-        open_port( OPEN_PORT_BLOCKED );
+      // Reinitialize the serial port for blocked operation
+      close(fd);
+      open_port( OPEN_PORT_BLOCKED );
 
-        // Poll for a touchtone star (*) key press.
+      // If the call is answered after three rings, poll for a
+      // touchtone star (*) key press. Note the star key feature is
+      // only available if the call is answered after the third ring.
+      // This is necessary to avoid conflict with answering machines.
+      // See the README file for further details.
+      if( numRings == 3 )
+      {
         //
         // Send an off-hook modem command so the mic can pick up the tones
         // generated by the star (*) key press. When the command is sent
@@ -530,8 +546,9 @@ int wait_for_response(fd)
         send_modem_command(fd, "AT+VCID=1\r");
         continue;
       }
-#endif                          // end DO_TONES
     }
+#endif                          // end DO_TONES
+
   }         // end of while()
 }
 
