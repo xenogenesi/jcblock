@@ -103,9 +103,12 @@
 	modem off-hook to listen for a key press. This terminates the answering
 	machine's record operation. To avoid this, the program was modified so
 	that the star key feature is active only if the phone is answered after
-	the third ring (normal operation, since the third ring indicates that
-	the call was not blocked). If the answering machine is then set to pick
-	up after the fourth ring (most people to this), no conflict occurs. If
-	this is not acceptable, the star key feature may be disabled altogether
-	with a compile option flag.
+	the third ring (normal operation, since the third ring indicates that the
+	call was not blocked). The answering machine *must* then be set to pick
+	up after the fourth (or later) ring (most people to this). If an answering
+	machine is not installed on the same line, a conditional compile flag may
+	be commented out to remove this restriction and the star key feature will
+	then be available if the call is answered after the third (or later) ring.
+	Alternatively, the star key feature may be disabled altogether with a
+	conditional compile flag.
 

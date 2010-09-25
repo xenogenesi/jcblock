@@ -40,9 +40,11 @@
 	(941 Hz and 1209 Hz) produced by pressing the star (*) key. Due
 	to a conflict with telephone answering machines on the same line,
 	this feature is only available when a call is answered after the
-	third ring. The answering machine must also be set to answer the
-	call on the fourth ring. If this is unacceptable, the star key
-	feature may be disabled in the program with a conditional compile
+	third ring. The answering machine *must* also be set to answer the
+	call on the fourth (or later) ring. If an answering machine is not
+	installed on the same line, a conditional compile flag may be
+	commented out to remove this restriction. Alternatively, the star
+	key feature may be disabled entirely with a conditional compile
 	flag (see the 09/24/10 UPDATES file entry for more details).
   
         The program requires a serial modem that can deliver caller
