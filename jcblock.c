@@ -378,9 +378,9 @@ int wait_for_response(fd)
     }
 
     // Write the record to the file
-    if( fprintf( fpCa, (const char *)buffer2 ) < 0 )
+    if( fputs( (const char *)buffer2, fpCa ) == EOF )
     {
-      printf("fprintf() failed\n");
+      printf("fputs( (const char *)buffer2, fpCa ) failed\n");
       return(-1);
     }
 
@@ -801,7 +801,7 @@ static bool check_blacklist( char *callstr )
       // kind of crude, but it works...
       close_open_port( CALLERID_NO );
 
-      usleep( 500000 );   // half second
+      usleep( 250000 );   // quarter second
 
       // Send off hook command
 #ifdef DEBUG
@@ -1088,11 +1088,11 @@ static void close_open_port( int doCallerID )
   // Close the port
   close(fd);
 
-  usleep( 500000 );   // half second
+  usleep( 250000 );   // quarter second
 
   open_port( OPEN_PORT_BLOCKED );
 
-  usleep( 500000 );   // half second
+  usleep( 250000 );   // quarter second
   init_modem(fd, doCallerID );
 }
 

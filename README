@@ -76,7 +76,8 @@
 	the distribution's package manager. For example, for an Ubuntu
 	distribution, the Synaptic Package Manager may be used to
 	install alsa-base, to install the library, and alsa-source, to
-	install the include file. It is also a good idea to install
+	install the source files. If /usr/include/alsa is not yet present
+	install libasound2-dev. It is also a good idea to install
 	alsa-utils in case testing/debugging of the sound interface is
 	needed.
 

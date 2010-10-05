@@ -112,3 +112,15 @@
 	Alternatively, the star key feature may be disabled altogether with a
 	conditional compile flag.
 
+	3 October, 2010, Upgraded to Ubuntu 10.04 from 8.04; changes needed.
+	--------------------------------------------------------------------
+
+	Ubuntu 10.04 runs Linux 2.6.32-25-generic. The gcc compiler is more
+	strict than the one in Ubuntu 8.04, so some changes were needed: Replaced
+	fprintf( fpCa, ...) with fputs( fpCa, ...) in file jcblock.c to write a
+	record to file callerID.dat. Directory /usr/include/alsa (and hence,
+	asoundlib.h) was not present. Loaded package libasound2-dev to correct
+	this. To speed up response, replaced the three usleep(500000) calls in
+	jcblock.c with usleep(250000). Other distributions using this version of
+	Linux (or close) will probably need similar changes.
+ 
