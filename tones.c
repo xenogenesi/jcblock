@@ -88,6 +88,7 @@
 
 #define DEBUG 1
 
+
 FLOATING magMax = 0;
 int magNum = 0;
 int blockCtr = 0;
@@ -111,7 +112,20 @@ SAMPLE testData[N_LO];
 snd_pcm_t *handle;
 char *buffer;
 int rc;
-snd_pcm_uframes_t frames;
+
+/*
+ * NOTE: Unfortunately, the value of the 'frames' parameter
+ * is dependent upon the version of ALSA that is being used.
+ * For older versions, a value of 32 works. For newer versions
+ * the value must be 128 or more. For version 1.0.21 (included
+ * with Ubuntu 10.04, Linux 2.6.32-25-generic) value 128 is
+ * needed. For version 1.0.13 (Knoppix, Linux 2.6.19) value
+ * 32 is needed.This value also works for the ALSA version
+ * included with Ubuntu 8.04. The value is set to 128 here to
+ * be compatible with newer versions of ALSA. Be aware that
+ * you may need to set it to 32 for your version.
+ */
+snd_pcm_uframes_t frames = 128;
 
 /* Prototypes */
 void InitGoertzel(int N, int target_freq, FLOATING *sine, 
@@ -286,7 +300,7 @@ void InitALSA(void)
   snd_pcm_hw_params_set_access(handle, params,
                       SND_PCM_ACCESS_RW_INTERLEAVED);
 
-  /* Signed 16-bit little-endian format */
+  /* Signed 8-bit little-endian format */
   snd_pcm_hw_params_set_format(handle, params,
                               SND_PCM_FORMAT_S8);
 
@@ -298,10 +312,9 @@ void InitALSA(void)
   snd_pcm_hw_params_set_rate_near(handle, params,
                                   &val, &dir);
 
-  /* Set period size to 32 frames. Note: the next
-   * call sets frames to 170 (size_near)!?!
+  /* Set period size to the value of 'frames'. See
+   * NOTE: at the beginning of this file.
    */
-  frames = 32;
   snd_pcm_hw_params_set_period_size_near(handle,
                               params, &frames, &dir);
 

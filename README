@@ -45,7 +45,8 @@
         on the line the star key feature may be made available for calls
         answered after the third or later ring. This option is controlled
         by a conditional compile flag (see the 09/24/10 UPDATES file entry
-        for more details).
+        for more details). Also see the NOTE: in the file concerning
+	an ALSA version conditional compile selection.
 
         The program requires a serial modem that can deliver caller
         ID and contains a speaker. The modem used for testing was a Zoom
@@ -79,7 +80,33 @@
 	install the source files. If /usr/include/alsa is not yet present
 	install libasound2-dev. It is also a good idea to install
 	alsa-utils in case testing/debugging of the sound interface is
-	needed.
+	needed. Here is a full list of the alsa packages I have installed
+	on my Ubuntu 10.04 machine (you can show the ones installed on
+	your machine by entering 'alsa' in the Synaptic Package Manager's
+	Quick Search: window):
+	alsa-utils		alsa-base		alsa-source
+	libasound2		libasound2-doc		libasound2-dev
+	libasound2-plugins	libsdl1.2debian-alsa	linux-sound-base
+	gstreamer0.10-alsa	bluez-alsa		libao2
+
+	No doubt some of these are not needed for the jcblock program,
+	but if you install all of them, jcblock should run.
+
+	If jcblock is run on a desktop or laptop, a microphone must be
+	placed near the modem's speaker and turned on. The volume level
+	must then be adjusted so that when the star key is pressed, the
+	audio generated causes the program's tone filter thresholds to be
+	exceeded.  Mic audio volume may usually be set by a Preferences
+	option. For Ubuntu the path is: System|Preferences|Sound. Then make
+	sure the proper sound device is selected under Hardware. The mic
+	volume may then be set under Input. The setting depends on the
+	position of the mic relative to the modem's speaker. The slider is
+	quite sensitive. Another way is to use the alsamixer program: choose
+	the sound interface (F6) and the Mic slider (arrow keys). Using
+	this program you have a numeric setting displayed that can be
+	reused. Remember to keep the phone you answer with away from the
+	mic, since the mic will respond to the tones received by the
+	handset!
 
         For continuous use, the program should be run on a low-power single
 	board computer so that it can be left on all the time.

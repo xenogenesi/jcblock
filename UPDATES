@@ -123,4 +123,19 @@
 	this. To speed up response, replaced the three usleep(500000) calls in
 	jcblock.c with usleep(250000). Other distributions using this version of
 	Linux (or close) will probably need similar changes.
+
+	16 October, 2010, Additional changes needed for Ubuntu 10.04 upgrade.
+	-------------------------------------------------------------------
+
+	Once I got a serial port installed on the new machine that I installed
+	Ubuntu 10.04 on, I discovered that the program did not run! I discovered
+	that the source of the problem was parameter 'frames' in the tones.c
+	file. I had it set to 32 and that value worked fine for the version
+	of ALSA included with Ubuntu 8.04. But for Ubuntu 10.04, it needed to
+	be raised to 128. See the NOTE: in the file for further details. At
+	the present I am using a USB serial port adapter that I got from
+	TigerDirect.com (~$15). Its discription is: Sabernt 6 Ft USB 2.0 Serial
+	DB9 Adapter W/ Male Thunbscrews. It worked immediately. Just plug it in
+	and run: jcblock -p /dev/ttyUSB0. I plan to test a PCI serial port card
+	soon.
  

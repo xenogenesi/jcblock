@@ -132,7 +132,6 @@ int main(int argc, char **argv)
   // Initialize the the star (*) key tones operation
   tonesInit();
 #endif
-
   // Open or create a file to append caller ID strings to
   if( (fpCa = fopen( "./callerID.dat", "a+" ) ) == NULL )
   {
@@ -152,7 +151,6 @@ int main(int argc, char **argv)
     printf("fopen() of blacklist.dat failed. A blacklist must exist.\n" );
     return;
   }
-
   // Open the serial port
   open_port( OPEN_PORT_BLOCKED );
 
