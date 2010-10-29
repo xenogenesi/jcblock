@@ -138,4 +138,20 @@
 	DB9 Adapter W/ Male Thunbscrews. It worked immediately. Just plug it in
 	and run: jcblock -p /dev/ttyUSB0. I plan to test a PCI serial port card
 	soon.
+
+	29, October, 2010, Switched from Zoom 3048 to USRobotics 5686G modem
+	--------------------------------------------------------------------
+
+        I have been using the USRobotics model 5686G modem since
+        October 20, 2010 and have seen no errors. I have therefore
+        decided to recommend using it instead of the Zoom 3048 modem.
+
+        I used the Zoom modem during most of the development work on
+        this project. However, late in the testing I discovered that
+        occasionally it did not deliver caller ID data between the first
+        and second rings. I tried two 3048 units and saw the same result.
+        I also upgraded the firmware in one of them with no effect. I
+        sent email to Zoom and got no reply. See the README file for further
+	details.
+
  
