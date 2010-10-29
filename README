@@ -1,12 +1,37 @@
 
 	Program: jcblock
 	
-	Description:
-
 	A program to block telemarketing (junk) calls.
 
-        Description:
-        A program to block telemarketing (junk) calls.
+	MODEM SELECTION:
+
+	I have been using the USRobotics model 5686G modem since
+	October 20, 2010 and have seen no errors. I have therefore
+	decided to recommend using it instead of the Zoom 3048 modem.
+
+	I used the Zoom modem during most of the development work on
+	this project. However, late in the testing I discovered that
+	occasionally it did not deliver caller ID data between the first
+	and second rings. I tried two 3048 units and saw the same result.
+	I also upgraded the firmware in one of them with no effect. I
+	sent email to Zoom and got no reply.
+
+	If you have a Zoom 3048 modem, definitely use it for evaluation
+	of the jcblock program. It will demonstrate all functionality of
+	the program and you can start building your blacklist. The symptom
+	you will see when the modem fails to deliver caller ID is that a
+	call that would normally be blocked by an entry in the blacklist
+	will be passed through. To get error free performance, you will
+	need to purchase(~$90) a USRobotics 5686G modem.
+
+	If you test the program with other modem brands, please report
+	your results (good or bad) using this site's mailing list or by
+	contacting me directly from this project's website. I will post
+	any useful reports I receive. Thank you...WSH
+
+
+	PROGRAM DESCRIPTION:
+
         This program connects to a serial port modem and listens for
         the caller ID string that is sent between the first and second
         rings. It records the string in file callerID.dat. It then

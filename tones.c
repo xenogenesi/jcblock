@@ -81,7 +81,7 @@
 #define TARGET_FREQ_HI         1209.0           //1209 Hz
 #define N_HI                    195             //1209 Hz block size
 
-#define THRESHOLD                30
+#define THRESHOLD                10
 #define BLK_CTR_MAX              5
 
 #define PI			3.14159265

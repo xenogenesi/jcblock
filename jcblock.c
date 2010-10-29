@@ -323,6 +323,12 @@ int wait_for_response(fd)
       continue;
     }
 
+    // Ignore a string "AT+VCID=1" returned from the modem.
+    if( strncmp( buffer, "AT+VCID=1", 9 ) == 0 )
+    {
+      continue;
+    }
+
     // Caller ID data was received after the first ring.
     numRings = 1;
 
