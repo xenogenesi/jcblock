@@ -74,8 +74,8 @@
 	an ALSA version conditional compile selection.
 
         The program requires a serial modem that can deliver caller
-        ID and contains a speaker. The modem used for testing was a Zoom
-        model 3048. It will return caller ID if it is sent command:
+        ID and contains a speaker. The modem recommended is the USRobotics
+        model 5686G. It will return caller ID if it is sent command:
         AT+VCID=1. Note that the modem is used just to detect a call's
         caller ID and the star key tones; the modem's normal communication
         function is not used. The program may be terminated by sending
@@ -172,34 +172,42 @@
 
         Country codes:
 
-        The Zoom 3048 (and probably other modems) must be sent a country
+        The USRobotics (and probably other modems) must be sent a country
         code command if the country of use is other than USA (the default).
-        The commands are as follows (check your modem documentation for
-        confirmation):
+	The command syntax is: "AT+GCI=XX\r", where XX is the country code.
+        The codes for the USRobotics modem are as follows (check your modem
+	'Command Set' documentation for confirmation):
 
-        Austria         AT+GCI=0A       Hong Kong       AT+GCI=50
-        Canada          AT+GCI=B5       India           AT+GCI=53
-        China           AT+GCI=26       Japan           AT+GCI=00
-        Denmark         AT+GCI=31       Singapore       AT+GCI=9C
-        Finland         AT+GCI=3C       Taiwan          AT+GCI=FE
-        France          AT+GCI=3D       U.K.            AT+GCI=B4
-        Germany         AT+GCI=42       U.S.A.          AT+GCI=B5
+	Austria		0A	Hungary		51	Norway		82
+	Belgium		0F	Iceland		52	Poland		8A
+	Cyprus		2D	Ireland		57	Portugal	8B
+	Czech and
+	Slovak Federal	2E	Israel		58	Spain		A0
+	Republic
+	Denmark		31	Italy		59	Slovakia	FB
+	Estonia		F9	Latvia		F8	Slovenia	FC
+	Finland		3C	Liechtenstein	68	Sweden		A5
+	France		3D	Lituania	F7	Switzerland	A6
+	Germany		42	Luxembourg	69	Turkey		AE
+	Greece		46	Malta		B4	United Kingdom	B4
+				Netherlands	7B
 
-        The command should be sent in the init_modem() function after
-        the modem reset command (ATZ) is sent. Other program changes may
-	needed to conform to non-USA country telephone systems.
+        The command should be sent in the init_modem() function after the modem
+	reset command (ATZ) is sent (the location is indicated in the listing).
+	Other program changes may be needed to conform to non-USA country telephone
+	systems.
 
         Real-time prototype system:
 
-        The photo shows a prototype jcblock system consisting of a
-	Zoom 3048 modem and an eBox-3300 Server-in-a-box (SIB) purchased
-	from EMAC, Inc. The SIB contains a Vortex86DX System-on-a-Chip
-	that implements most of the functions of a standard x86 PC. The
-	system shown draws about 6 watts, so the cost of running it 24/7
-	is minimal. The eBox came with a version of Linux installed that
-	did not have the ALSA audio interface. Since this application
-	requires a microphone to implement the star (*) key feature, I chose
-	to boot a stripped down version of Knoppix from a USB memory stick.
+        The photo shows a prototype jcblock system consisting of a USRobotics
+	5686G modem and an eBox-3300 Server-in-a-box (SIB) purchased from EMAC,
+	Inc. The SIB contains a Vortex86DX System-on-a-Chip that implements
+	most of the functions of a standard x86 PC. The system shown draws about
+	6 watts, so the cost of running it 24/7 is minimal. The eBox came with
+	a version of Linux installed that did not have the ALSA audio interface.
+	Since this application requires a microphone to implement the star (*)
+	key feature, I chose to boot a stripped down version of Knoppix from a
+	USB memory stick.
 
 	I started with the version included on a DVD with the book:
 	"KNOPPIX HACKS, 2nd Edition", O'Reilly, ISBN:978-0-596-51493-8
