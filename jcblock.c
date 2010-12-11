@@ -278,9 +278,11 @@ int wait_for_response(fd)
 {
   char buffer[255];     // Input buffers
   char buffer2[255];
+  int nbytes2;          // bytes in buffer2
+  char buffer3[255];
   char bufRing[10];     // RING input buffer
   int nbytes;           // Number of bytes read
-  int i;
+  int i, j;
   struct tm *tmPtr;
   time_t currentTime;
   int currentYear;
@@ -332,11 +334,39 @@ int wait_for_response(fd)
     // Caller ID data was received after the first ring.
     numRings = 1;
 
-    // A caller ID string was constructed. Write it to the
-    // callerID.dat file.
+    // A caller ID string was constructed.
+
+    // If space(' ') characters are not present before and after all
+    // equal('=') characters, insert them (some modems don't insert
+    // them!).
+    for( i = 0, j = 0; i < nbytes + 1; i++ )
+    {
+      if( buffer[i] == '=' )
+      {
+        if( buffer[i - 1] != ' ' )    // If space before is missing...
+        {
+          buffer2[j++] = ' ';
+          buffer2[j++] = buffer[i];
+          if( buffer[i + 1] != ' ' )  // If space after is missing...
+          {
+            buffer2[j++] = ' ';
+          }
+        }
+        else                          // If space before is there...
+        {
+          buffer2[j++] = buffer[i];
+        }
+      }
+      else                            // If this char is not a '='...
+      {
+        buffer2[j++] = buffer[i];
+      }
+    }
+    nbytes2 = j;                      // number of bytes in buffer2
+
     // 
-    // The DATE field does not contain the year. First compute the
-    // year and insert it.
+    // The DATE field does not contain the year. Compute the year
+    // and insert it.
     if( time( &currentTime ) == -1 )
     {
       printf("time() failed\n" );
@@ -355,22 +385,22 @@ int wait_for_response(fd)
     // Zero a new buffer with room for the year.
     for( i = 0; i < 100; i++ )
     {
-      buffer2[i] = 0;
+      buffer3[i] = 0;
     }
 
     // Fill it but leave room for the year
     for( i = 0; i < 13; i++ )
     {
-      buffer2[i] = buffer[i];
+      buffer3[i] = buffer2[i];
     }
-    for( i = 13; i < nbytes + 1; i++ )
+    for( i = 13; i < nbytes2; i++ )
     {
-      buffer2[i + 2] = buffer[i];
+      buffer3[i + 2] = buffer2[i];
     }
 
     // Insert the year characters.
-    buffer2[13] = curYear[0];
-    buffer2[14] = curYear[1];
+    buffer3[13] = curYear[0];
+    buffer3[14] = curYear[1];
 
     // Close and re-open file 'callerID.dat' (in case it was
     // edited while the program was running!).
@@ -382,9 +412,9 @@ int wait_for_response(fd)
     }
 
     // Write the record to the file
-    if( fputs( (const char *)buffer2, fpCa ) == EOF )
+    if( fputs( (const char *)buffer3, fpCa ) == EOF )
     {
-      printf("fputs( (const char *)buffer2, fpCa ) failed\n");
+      printf("fputs( (const char *)buffer3, fpCa ) failed\n");
       return(-1);
     }
 
@@ -400,7 +430,7 @@ int wait_for_response(fd)
     // is found, accept the call and bypass the blacklist check.
     if( fpWh != NULL )
     {
-      if( check_whitelist( buffer2 ) == TRUE )
+      if( check_whitelist( buffer3 ) == TRUE )
       {
         // Caller ID match was found (or an error occurred),
         // so accept the call
@@ -410,7 +440,7 @@ int wait_for_response(fd)
 
     // Compare the caller ID string to entries in the blacklist. If
     // a match is found, answer (i.e., terminate) the call.
-    if( check_blacklist( buffer2 ) == TRUE )
+    if( check_blacklist( buffer3 ) == TRUE )
     {
       // Blacklist entry was found.
       //
@@ -515,7 +545,7 @@ int wait_for_response(fd)
           if( tonesPoll() == TRUE )
           {
             // Write a caller ID entry to blacklist.dat.
-            write_blacklist( buffer2 );
+            write_blacklist( buffer3 );
             break;
           }
         }

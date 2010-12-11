@@ -154,4 +154,37 @@
         sent email to Zoom and got no reply. See the README file for further
 	details.
 
- 
+	11, December, 2010, Evaluation of TRENDnet TFM-560X modem
+	---------------------------------------------------------
+
+	The TRENDnet 56k (V.92) modem is attractive because it is inexpensive
+	(~$30 vs. ~$90 for USRobotics 5686G; TigerDirect.com, phone/VISA order).
+	I was suprised to find that it (almost) worked with the jcblock program
+	when it was run on my Dell Inspiron 570 desktop computer. The only problem
+	was that the caller ID string returned did not have spaces before and
+	after the equal signs. For example:
+	--DATE=1205--TIME=1343--NMBR=8885551212--NAME=Cell Phone    NH--
+	vs. what the program expects:
+	--DATE = 1205--TIME = 1343--NMBR = 8885551212--NAME = Cell Phone    NH-- 
+	I added code to detect and insert the spaces. The modem then worked
+	correctly with the program. That's the good news. The bad is that it
+	doesn't work with my low power target ebox system. The program gets the
+	"RING" strings but doesn't get the caller ID string between the first and
+	second rings. Since the program just waits on a blocked read of the modem
+	serial port, there's not much I can do to isolate this problem. I can only
+	speculate that it has to do with differences between the ebox and Dell
+	processors: 1)Linux 2.6.19/ebox vs. 2.6.32/Dell, 2)different clock rates,
+	3)different UART circuits, etc. If anyone has any ideas on this, please
+	let me know... The modem may work with target systems using a different
+	processor, so it may be worth while trying it since it is so low cost.
+
+	To use the modem with my Dell machine I first had to install a PCI serial
+	I/O card. I used a: StarTech.com PCI1S550 1 Port PCI 16C550 Serial Card.
+	Ubuntu found it and assigned node /dev/ttyS0 to it (the jcblock default).
+	I have also used a: SABRENT USB 2.0 to Serial (9-pin) DB9 RS-232 6-FT
+	Adapter Cable unit. Ubuntu installs this as /dev/ttyUSB0, so I ran jcblock
+	with command: jcblock -p /dev/ttyUSB0. I ordered both adapters from
+	TigerDirect.com. The jcblock.c file currently on the project's SourceForge
+	site has the code to insert the space characters if needed.
+
+  
