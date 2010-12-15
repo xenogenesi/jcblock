@@ -190,4 +190,9 @@
 	TigerDirect.com. The jcblock.c file currently on the project's SourceForge
 	site has the code to insert the space characters if needed.
 
-  
+ 	Summary: at this time I have tested three modems with the jcblock program:
+	Zoom 3048, TRENDnet TFM-560X, USRobotics 5686G. Only the USRobotics unit
+	works with jcblock without error. I suspect that, since caller ID is not
+	needed in most modem applications, manufacturers don't see much point in
+	getting it to work. So at present, you need to use the USRobotics unit.
+ 
