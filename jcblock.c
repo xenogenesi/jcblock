@@ -158,7 +158,6 @@ int main(int argc, char **argv)
   if( init_modem(fd, CALLERID_YES ) != 0 )
   {
     printf("init_modem() failed\n");
-    fflush(stdout);
     close(fd);
     fclose(fpCa);
     fclose(fpBl);
@@ -166,6 +165,8 @@ int main(int argc, char **argv)
 #ifdef DO_TONES
     tonesClose();
 #endif
+    fflush(stdout);
+    sync();
     return;
   }
 
@@ -176,7 +177,6 @@ modemInitialized = TRUE;
   // Wait for calls to come in...
   wait_for_response(fd);
 
-  fflush(stdout);
   close( fd );
   fclose(fpCa);
   fclose(fpBl);
@@ -184,6 +184,8 @@ modemInitialized = TRUE;
 #ifdef DO_TONES
   tonesClose();
 #endif
+  fflush(stdout);
+  sync();
 }
 
 //
@@ -291,6 +293,13 @@ int wait_for_response(fd)
   // Get a string of characters from the modem
   while(1)
   {
+#ifdef DEBUG
+    // Flush anything in stdout (needed if stdout is redirected to
+    // a disk file).
+    fflush(stdout);     // flush C library buffers to kernel buffers
+    sync();             // flush kernel buffers to disk
+#endif
+
     // Block until at least one character is available.
     // After first character is received, continue reading
     // characters until inter-character timeout (VTIME)
@@ -1147,7 +1156,6 @@ static void cleanup( int signo )
   }
 
   // Close everything
-  fflush(stdout);
   close(fd);
   fclose(fpCa);
   fclose(fpBl);
@@ -1155,6 +1163,8 @@ static void cleanup( int signo )
 #ifdef DO_TONES
   tonesClose();
 #endif
+  fflush(stdout);     // flush C library buffers to kernel buffers
+  sync();             // flush kernel buffers to disk
 
   // If program is in a blocked read(...) call, use kill() to
   // terminate program (happens when modem is not connected!).
