@@ -110,7 +110,7 @@ int main(int argc, char **argv)
   // See if a serial port argument was specified
   if( argc > 1 )
   {
-    while( ( optChar = getopt( argc, argv, "p:" ) ) != EOF )
+    while( ( optChar = getopt( argc, argv, "p:h" ) ) != EOF )
     {
       switch( optChar )
       {
@@ -118,8 +118,11 @@ int main(int argc, char **argv)
           serialPort = optarg;
           break;
 
+        case 'h':
         default:
           fprintf( stderr, "Usage: jcblock [-p /dev/<portID>]\n" );
+          fprintf( stderr, "Default serial port is: /dev/ttyS0.\n" );
+          fprintf( stderr, "For another port, use the -p option.\n" );
           _exit(-1);
       }
     }
@@ -931,7 +934,7 @@ bool write_blacklist( char *callstr )
   char blackbuf[100];
   char blacklistEntry[80];
   char readbuf[10];
-  char *srcDesc = "KEY-* ENTRY";
+  char *srcDesc = "*-KEY ENTRY";
   char *nameStr, *nmbrStr, *nmbrStrEnd;
   int nameStrLength, nmbrStrLength;
   int i;

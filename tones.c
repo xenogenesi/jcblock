@@ -28,30 +28,37 @@
  * 	  by Jeff Tranter, Linux Journal, October 2004.
  *
  *	Tone detection based on:
- *	  "The Goretzel Algorithm", Kevin Banks,
+ *	  "The Goertzel Algorithm", Kevin Banks,
  *	  Embedded Systems Programming, September 2002.
  *
- *	Choosing N, the block size (N = SAMPLING_RATE/BIN_WIDTH):
- *	  Objective is to choose N such that the tone frequency is in
- *	  the center of a bin.
- *	    For 941 Hz, try N = 259:
- *	     BIN_WIDTH = 8000.0/259 = 30.89 Hz; 941/30.89 = 30.46;
- *	     30*30.89 = 926.70; 31*30.89 = 957.59, so 941 is close to the
- *	     center.
- *	    For 1209 Hz, try N = 195:
- *	     BIN_WIDTH = 8000.0/195 = 41.03 Hz; 1209/41.03 = 29.47;
- *	     29*41.03 = 1189.87; 30*41.03 = 1230.90, so 1209 is close to
- *	     the center.
+ *	Choosing N_LO and N_HI, the block sizes:
+ *	  The best way I have found to do this is to run the test program
+ *	  included in the above article "The Goertzel Algorithm" and try
+ *	  some values. It prints out a spectrum of filter response. Run it
+ *	  with the included values. Then try the values chosen below for tone
+ *	  frequency and block size (determines bandwidth). The values finally
+ *	  chosen required some experimenting. It can be compiled using:
+ *		gcc -o goertzel goertzel.c -lm
+ *	  Contact me via this project's web site if you have an interest in
+ *	  this area.
  *
  *	Choosing THRESHOLD:
  *	   Objective is to put THRESHOLD safely above the non-detection
- *	   amplitudes and below the detection amplitudes. From the
+ *	   amplitudes and just below the detection amplitudes. From the
  *	   program's printf outputs, you can determine a safe threshold
  *	   that will work for both tones when the star (*) key is pressed.
  *	   The value depends on how close the microphone is to the speaker
  *	   and therefore will vary for different hardware systems. You may
  *         have to adjust the value to get the program to work  with your
- *         computer.
+ *         computer. If you are using a USRobotics USR5686G modem notice
+ *	   that there is a speaker volume control on its right side. It
+ *	   should be set and secured in a fixed position (I tape mine).
+ *
+ *	Determining required key hold time:
+ *	   The time that the star key must be held down to signal a
+ *	   detection may be computed from:
+ *	       (N_max/SAMPLING_RATE)*DET_MIN
+ *	   For the parameters chosen below: (528/8000)*10 = 0.66 second.
  */
 #include <stdio.h>
 #include <math.h>
@@ -63,36 +70,32 @@
 
 #include "common.h"
 
-/* Goetzel globals */
+/* Goertzel globals */
 
 #define FLOATING	float
 #define SAMPLE		unsigned char
 
-#define SAMPLING_RATE           8000.0		//8kHz
+#define SAMPLING_RATE           8000.0		// Hz
 
 /* Low tone (941 Hz) parameters */
-#define TARGET_FREQ_LO		941.0		//941 Hz
-#define N_LO                    259             //941 Hz block size
+#define TARGET_FREQ_LO		941.0		// Hz
+#define N_LO                    528             // block size
 
 /* High (1209 Hz) tone parameters */
-#define TARGET_FREQ_HI         1209.0           //1209 Hz
-#define N_HI                    195             //1209 Hz block size
+#define TARGET_FREQ_HI         1209.0           // Hz
+#define N_HI                    410             // block size
 
-#define THRESHOLD                2.5
-#define BLK_CTR_MAX              5
+#define THRESHOLD                0.6		// depends on mic position
+
+#define DET_MIN                  10		//minimum detections
+
 
 #define PI			3.14159265
 
 #define DEBUG 1
 
-
-FLOATING magMax = 0;
-int magNum = 0;
-int blockCtr = 0;
-FLOATING magnitudeSumLo = 0.0;
-FLOATING magnitudeSumHi = 0.0;
-
-FLOATING magSum = 0;
+int numDetLo = 0;
+int numDetHi = 0;
 
 FLOATING coeff_lo, coeff_hi;
 FLOATING Q1;
@@ -186,7 +189,6 @@ bool ProcessToneSamples(int N, FLOATING sine,
   FLOATING real, imag;
   FLOATING magnitude;
   FLOATING magnitudeSquared;
-  FLOATING magAvg;
   int index;
   bool detection = FALSE;
 
@@ -206,62 +208,33 @@ bool ProcessToneSamples(int N, FLOATING sine,
 
   if(N == N_LO)
   {
-    magnitudeSumLo += magnitude;
+#ifdef DEBUG
+    printf("\nN_LO: ");
+    printf("rel mag=%12.5f  ", magnitude);
+#endif
   }
   else
   {
-    magnitudeSumHi += magnitude;
+#ifdef DEBUG
+    printf("N_HI: ");
+    printf("rel mag=%12.5f  ", magnitude);
+#endif
   }
 
-  /* "Debounce(average)" BLK_CTR_KAX results and compare to THRESHOLD */
-  if(blockCtr == BLK_CTR_MAX )
+  if( magnitude > THRESHOLD )
   {
-    if(N == N_LO)
-    {
-      magAvg = magnitudeSumLo/blockCtr;
-
 #ifdef DEBUG
-      printf("\nN_LO: ");
-      printf("rel mag=%12.5f  ", magnitude);
-      printf("mag avg5=%12.5f  ", magAvg );
+    printf("detection=TRUE\n");
 #endif
-      magnitudeSumLo = 0.0;
-    }
-    else
-    {
-      magAvg = magnitudeSumHi/blockCtr;
-
-#ifdef DEBUG
-      printf("N_HI: ");
-      printf("rel mag=%12.5f  ", magnitude);
-      printf("mag avg5=%12.5f  ", magAvg );
-#endif
-      magnitudeSumHi = 0.0;
-    }
-
-    if( magAvg > THRESHOLD )
-    {
-      detection = TRUE;
-    }
-    else
-    {
-      detection = FALSE;
-    }
-
-#ifdef DEBUG
-    if(detection == TRUE )
-    {
-      printf("detection=TRUE");
-    }
-    else
-    {
-      printf("detection=FALSE");
-    }
-    printf("\n");
-#endif
+    return TRUE;
   }
-
-  return detection;
+  else
+  {
+#ifdef DEBUG
+    printf("detection=FALSE\n");
+#endif
+    return FALSE;
+  }
 }
 
 /*
@@ -347,9 +320,6 @@ bool tonesPoll()
   int index;
   int numSamples;
   int i;
-  bool det_lo, det_hi;
-
-  blockCtr++;
 
   /*
    * Read and condition 'frames' blocks of samples until N_max
@@ -386,20 +356,35 @@ bool tonesPoll()
     }
   }
 
-  /* Process the samples for each tone */
-  det_lo = ProcessToneSamples( N_LO, sine_lo, cosine_lo, coeff_lo );
-  det_hi = ProcessToneSamples( N_HI, sine_hi, cosine_hi, coeff_hi );
-
-
-  if(blockCtr == BLK_CTR_MAX)
+  /*
+   * Process the samples for each tone. Count consecutive detections.
+   * If a non-detection occurs start the count over.
+   */
+  if( ProcessToneSamples( N_LO, sine_lo, cosine_lo, coeff_lo ) == TRUE )
   {
-    blockCtr = 0;
+    numDetLo++;
+  }
+  else
+  {
+    numDetLo = 0;
+  }
+  if( ProcessToneSamples( N_HI, sine_hi, cosine_hi, coeff_hi ) == TRUE )
+  {
+    numDetHi++;
+  }
+  else
+  {
+    numDetHi = 0;
   }
 
-  /* Require both tones to be detected to declare a final detection */
-  if( det_lo && det_hi )
+  /*
+   * Require at least DET_MIN consecutive detections of both tones
+   * to declare a *-KEY press detection.
+   */
+  if( numDetLo >= DET_MIN && numDetHi >= DET_MIN )
   {
     printf("*-KEY press detected\n");
+    numDetLo = numDetHi = 0;
     return TRUE;
   }
 

@@ -139,7 +139,7 @@
 	and run: jcblock -p /dev/ttyUSB0. I plan to test a PCI serial port card
 	soon.
 
-	29, October, 2010, Switched from Zoom 3048 to USRobotics 5686G modem
+	29 October, 2010, Switched from Zoom 3048 to USRobotics 5686G modem
 	--------------------------------------------------------------------
 
         I have been using the USRobotics model 5686G modem since
@@ -154,7 +154,7 @@
         sent email to Zoom and got no reply. See the README file for further
 	details.
 
-	12, December, 2010, Evaluation of TRENDnet TFM-560X modem
+	12 December, 2010, Evaluation of TRENDnet TFM-560X modem
 	---------------------------------------------------------
 
 	The TRENDnet 56k (V.92) modem is attractive because it is inexpensive
@@ -195,4 +195,15 @@
 	works with jcblock without error. I suspect that, since caller ID is not
 	needed in most modem applications, manufacturers don't see much point in
 	getting it to work. So at present, you need to use the USRobotics unit.
+
+	26 January, 2011 Improved the star key tone detection algorithm
+	---------------------------------------------------------------
+
+	The tone detection algorithm must successfully detect the two tones
+	generated when the star key is pressed but reject voice audio received
+	by the mic either from the modem speaker or from ambient room sounds
+	(i.e., the speach of the person taking the call). The improved algorithm
+	uses narrower Goertzel filters and also requires ten consecutive detections
+	of both key press tones before a key press is declared. This requires the
+	star key to be held down for about 0.66 seconds.
  

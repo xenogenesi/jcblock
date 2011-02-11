@@ -74,7 +74,7 @@
 	an ALSA version conditional compile selection.
 
         The program requires a serial modem that can deliver caller
-        ID and contains a speaker. The modem recommended is the USRobotics
+        ID and contains a speaker. The recommended unit is the USRobotics
         model 5686G. It will return caller ID if it is sent command:
         AT+VCID=1. Note that the modem is used just to detect a call's
         caller ID and the star key tones; the modem's normal communication
