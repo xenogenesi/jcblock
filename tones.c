@@ -85,7 +85,7 @@
 #define TARGET_FREQ_HI         1209.0           // Hz
 #define N_HI                    410             // block size
 
-#define THRESHOLD                0.6		// depends on mic position
+#define THRESHOLD                0.1		// depends on mic position
 
 #define DET_MIN                  10		//minimum detections
 

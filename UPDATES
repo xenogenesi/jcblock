@@ -206,4 +206,15 @@
 	uses narrower Goertzel filters and also requires ten consecutive detections
 	of both key press tones before a key press is declared. This requires the
 	star key to be held down for about 0.66 seconds.
+
+	21 August, 2012 Change to simply defeat a "Freshness Filter"
+	------------------------------------------------------------
+
+	It seems that Sourceforge removes projects from its Search facility
+	if no updates have occurred for a period of time (maybe one year?).
+	This project has not needed an update, so none have been made. This
+	addition to the UPDATES file was made simply to change a file so that an
+	update could be made. No program files were changed. A project update
+	was then performed. Hopefully, after this update users will again be able
+	to locate the project by entering 'jcblock' in the Search window.
  
