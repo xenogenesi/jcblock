@@ -60,8 +60,8 @@
 #define ANS_MACHINE
 
 // Comment out the following define if you don't want truncation of
-// records older than one year from files blacklist.dat and callerID.dat.
-// Then remove truncate.c from the gcc compile command.
+// records older than nine months from files blacklist.dat and
+// callerID.dat. Then remove truncate.c from the gcc compile command.
 #define DO_TRUNCATE
 
 #define CALLERID_YES 1
@@ -460,9 +460,9 @@ int wait_for_response(fd)
       // The following function truncates (removes old) entries
       // in data files -- if thirty days have elapsed since the
       // last time it truncated. Entries in callerID.dat are removed
-      // if they are older than one year. Entries in blacklist.dat
+      // if they are older than nine months. Entries in blacklist.dat
       // are removed if they have not been used to terminate a call
-      // within the last year.
+      // within the last nine months.
       // Note: it is not necessary for this function to run for the
       // main program to operate normally. You may remove it if you
       // don't want automatic file truncation. All of its code is in

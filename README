@@ -60,10 +60,10 @@
         Functions to manage the truncation (removal) of records from the
         blacklist.dat and callerID.dat files are present in file truncate.c.
         Records in the blacklist.dat file that have not been used to
-        terminate a call in the last year are removed. Records in the
-        callerID.dat file that are older than a year are removed. The
-        operations are performed every thirty days. Alternatively, entries
-        in the .dat files may be edited manually.
+        terminate a call within the last nine months are removed. Records
+	in the callerID.dat file that are older than nine months are removed.
+	The operations are performed every thirty days. Alternatively,
+	entries in the .dat files may be edited manually.
   
         An additional feature is supported by functions in file tones.c.
         The program will add a record to the blacklist.dat file for the
@@ -288,5 +288,4 @@
         low power embedded computer system similar to the one I described
 	above. If your PC does not have a serial port, a PCI serial port card
 	or USB serial port adapter can be installed at minimal expense.
-
 

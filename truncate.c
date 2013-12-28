@@ -21,9 +21,10 @@
  *
  *	Functions to manage the truncation (removal) of records from the
  *	blacklist.dat and callerID.dat files. Records in the blacklist.dat
- *	file that have not been used to terminate a call in the last year
- *	are removed. Records in the callerID.dat file that are older than
- *	a year are removed. The operations are performed every thirty days.
+ *	file that have not been used to terminate a call in the last nine
+ *	months are removed. Records in the callerID.dat file that are older
+ *	than nine months are removed. The operations are performed every
+ *	thirty days.
  */
 #include <stdio.h>
 #include <time.h>
@@ -37,7 +38,7 @@
 #include "common.h"
 
 #define CHECK_SECS    30*24*60*60       // seconds in thirty days
-#define YEAR_SECS    365*24*60*60       // seconds in a (standard) year
+#define KEEP_SECS  (365-90)*24*60*60    // seconds in (about) nine months
 static FILE *fpTime;                    // Pointer for file .jcblock
 static FILE *fpCaN;                     // Pointer for file callerID.dat.new
 static FILE *fpBlN;                     // Pointer for tile blacklist.dat.new
@@ -329,9 +330,9 @@ int truncate_callerID_records()
       return -1;
     }
 
-    // If recordTime is less than YEAR_SECS old, add the record
+    // If recordTime is less than KEEP_SECS old, add the record
     // to file callerID.dat.new. Otherwise, ignore (truncate) it.
-    if( (currentTime - recordTime) < YEAR_SECS )
+    if( (currentTime - recordTime) < KEEP_SECS )
     {
       if( fputs( callerBuf, fpCaN ) < 0 )
       {
@@ -495,9 +496,9 @@ int truncate_blacklist_records()
       return -1;
     }
 
-    // If recordTime is less than YEAR_SECS old, add the record
+    // If recordTime is less than KEEP_SECS old, add the record
     // to file blacklist.dat.new. Otherwise, ignore it.
-    if( (currentTime - recordTime) < YEAR_SECS )
+    if( (currentTime - recordTime) < KEEP_SECS )
     {
       if( fputs( blacklistBuf, fpBlN ) < 0 )
       {

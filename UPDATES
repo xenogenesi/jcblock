@@ -217,4 +217,30 @@
 	update could be made. No program files were changed. A project update
 	was then performed. Hopefully, after this update users will again be able
 	to locate the project by entering 'jcblock' in the Search window.
- 
+
+	28 December, 2013 Truncate file records after nine months
+	---------------------------------------------------------
+
+	After running the program (semi)continuously since 2008 on the platform
+	shown, I noted some occasional "erratic" behavior. Since the only change
+	that had occurred was the number of records present in the blacklist.dat
+	and callerID.dat files, I decided to test the program with a shortened
+	truncation time. So I made the following change in the truncate.c file:
+
+	I replaced preprocessor define:
+	  #define YEAR_SECS    365*24*60*60     // seconds in a (standard) year
+
+	with:
+	  #define KEEP_SECS  (365-90)*24*60*60  // seconds in (about) nine months
+
+	and replaced the references to YEAR_SECS with KEEP_SECS in the code.
+	These are the ONLY CODE CHANGES made. Other changes to file comments
+	and README text were made to reflect this change. This change corrected
+	the "erratic" behavior I was seeing. Evidently the number of records in
+	the .dat files was too large for the program to process. My blacklist.dat
+	file size went from 207 to 183 records; the callerID.dat file from 1052
+	to 827 records. This change may or may not be needed for other platforms.
+	The eBox-3300 has a clock speed of 1 GHz and contains a Vortex86DX SoC.
+	Note that a blacklist.dat record will still stay in the file indefinitely
+	as long as it is used to terminate a call within the last nine months. 
+	 
