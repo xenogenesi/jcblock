@@ -3,14 +3,20 @@
 	
 	A program to block telemarketing (junk) calls.
 
-	RECENT ACTIVITY (04/2013):
+	RECENT ACTIVITY:
 
-	Several people have been successful running the program on
-	a Raspberry Pi processor using a USB modem. The modems that
-	have been used successfully are: US Robotics USR805637 and
-	TRENDnet TFM-561U. There is a good writeup on the details at:
+	(04/2013): Several people have been successful running the
+	program on a Raspberry Pi processor using a USB modem. The
+	modems that have been used successfully are: US Robotics
+	USR805637 and TRENDnet TFM-561U. There is a good writeup on
+	the details at:
 	http://weeklytechforum.com/2013/03/28/
 	                  block-unwanted-calls-with-a-raspberry-pi/
+
+	(12/2013): A minor change was made to the truncate.c file to
+	cause data file record truncation after nine months instead of
+	after one year. See the 28 December, 2013 entry in the UPDATES
+	file for details.
 
 	MODEM SELECTION:
 
