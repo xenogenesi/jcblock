@@ -29,8 +29,9 @@
  *	the call. If a match is not found, it reads strings from file
  *	blacklist.dat and scans them against the caller ID string for a
  *	match. If it finds a match to a string in the blacklist, it sends
- *	an off-hook command (ATH1) to the modem, followed by an on-hook
- *	command (ATH0). This terminates the junk call.
+ *	an off-hook command (ATH1) to the modem, followed optionally by
+ *	commands to generate a fax tone and finally by an on-hook command
+ *	(ATH0). This terminates the junk call.
  *
  *	For more details, see the README and UPDATES files.
  */
@@ -64,6 +65,13 @@
 // callerID.dat. Then remove truncate.c from the gcc compile command.
 #define DO_TRUNCATE
 
+// Comment out the following define if you don't have a fax modem
+// that supports fax command: AT+FCLASS=2.0 (or, if this command does
+// not work with your fax modem, try: AT+FCLASS=2). By default this is
+// commented out so that the program will run with fax and non-fax
+// modems.
+//#define DO_FAX_TONE
+
 #define CALLERID_YES 1
 #define CALLERID_NO 0
 
@@ -83,7 +91,9 @@ static int numRings;
 
 static void cleanup( int signo );
 
+// Prototypes
 int send_modem_command(int fd, char *command );
+int send_timed_modem_command(int fd, char *command, int numSecs );
 static bool check_blacklist( char *callstr );
 static bool write_blacklist( char *callstr );
 static bool check_whitelist( char * callstr );
@@ -194,7 +204,7 @@ modemInitialized = TRUE;
 //
 // Initialize the modem.
 // The 'doCallerID' argument allows initialization with
-// or without sending the caller ID command (AT+VCID=1).
+// or without sending the caller ID command.
 //
 int init_modem(int fd, int doCallerID )
 {
@@ -215,9 +225,15 @@ int init_modem(int fd, int doCallerID )
 
   if( doCallerID )
   {
-    // Tell modem to return caller ID
+    // Tell modem to return caller ID. Note: different
+    // modems use different commands here. If this
+    // command hangs the program, try these others:
+    // AT#CID=1, AT#CLS=8#CID=1, AT#CID=2, AT%CCID=1,
+    // AT%CCID=2, AT#CC1, AT*ID1 or check your modem
+    // documentation. The US Robotics 5686G requires
+    // AT+VCID=1. The 5686E requires AT#CID=1.
 #ifdef DEBUG
-printf("sending AT+VCID=1 command...\n");
+printf("sending caller ID command...\n");
 #endif
     if( send_modem_command(fd, "AT+VCID=1\r") != 0 )
     {
@@ -274,6 +290,23 @@ int send_modem_command(int fd, char *command )
     printf("did not get command OK\n");
 #endif
   return( -1 );
+}
+
+//
+// Send command string to the modem. Wait 'numSecs' seconds
+// and return -- don't wait for a reply.
+//
+int send_timed_modem_command(int fd, char *command, int numSecs )
+{
+  // Send an AT command ending with a CR
+  if( write(fd, command, strlen(command) ) != strlen(command) )
+  {
+    printf("send_timed_modem_command: write() failed\n" );
+  }
+
+  sleep(numSecs);
+
+  return(0);
 }
 
 //
@@ -855,7 +888,31 @@ static bool check_blacklist( char *callstr )
 #endif
       send_modem_command(fd, "ATH1\r");
 
+#ifdef DO_FAX_TONE
+      // Put modem in fax service class command mode
+      // (note:you may need to send "AT+FCLASS=2\r"
+      // instead).
+#ifdef DEBUG
+      printf("sending AT+FCLASS=2.0 command\n");
+#endif
+      send_modem_command(fd,"AT+FCLASS=2.0\r");
+
+      // Send an ATA command. Don't wait for a
+      // response. Wait five seconds and return.
+      // This command starts with a CED tone
+      // (see UPDATES file for CED definition).
+      // That simulates a fax initial response.
+#ifdef DEBUG
+      printf("sending ATA command\n");
+#endif
+      send_timed_modem_command(fd, "ATA\r", 5);
+
+      // Put modem back into normal modem command mode.
+      send_modem_command(fd, "AT+FCLASS=0\r");
+
+#else			// for non-fax modems...
       sleep(1);
+#endif                  // end of DO_FAX_TONE
 
       // Send on hook command
 #ifdef DEBUG
