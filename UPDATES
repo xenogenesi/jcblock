@@ -266,4 +266,25 @@
 	DO_FAX_TONE in file jcblock.c. By default it is commented out so that the
 	program will run for fax and non-fax modems. All code changes for this
 	feature occurred in the jcblock.c file.
- 
+
+	23 February, 2014 Added a tag to a call record
+	----------------------------------------------
+
+	I added code that replaces the first character in a call record with a
+	tag character before it is written to the callerID.dat file. The tag
+	indicates how the program handled the call. Here are the possible tag
+	values:
+		B	The call record matched an entry in the blacklist so
+			the call was terminated.
+
+		W	The call record matched an entry in the whitelist, so
+			the call was accepted.
+
+		*	The person receiving the call pressed the * key, so an
+			entry was placed in the blacklist for the call.
+
+		-	The call record did not match an entry in the blacklist
+			or the whitelist, so the call was accepted.
+
+	All changes were made in the jcblock.c file.
+

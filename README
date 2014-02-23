@@ -18,12 +18,17 @@
 	after one year. See the 28 December, 2013 entry in the UPDATES
 	file for details.
 
-	(2/2014): Code was added that emits a fax tone after the
+	(02/2014): Code was added that emits a fax tone after the
 	off-hook command. This feature is optional and is designed to
 	work with fax modems. This option will cause some predictive
 	dialers to reject the number and remove it from their call
 	list. See the 20 February, 2014 entry in the UPDATES file for
 	details.
+
+	(02/2014): Added code to add a tag to a call record before
+	it is written to file callerID.dat. The tag indicates how the
+	program handled the call. See the 23 February, 2014 entry in
+	the UPDATES file for details.
 
 	MODEM SELECTION:
 

@@ -100,6 +100,7 @@ static bool check_whitelist( char * callstr );
 static void open_port( int mode );
 static void close_open_port( int doCallerID );
 int init_modem(int fd, int doCallerID );
+int tag_and_write_callerID_record( char *buffer, char tagChar);
 
 static char *copyright = "\n"
 	"jcblock Copyright (C) 2008 Walter S. Heath\n"
@@ -447,29 +448,6 @@ int wait_for_response(fd)
     buffer3[13] = curYear[0];
     buffer3[14] = curYear[1];
 
-    // Close and re-open file 'callerID.dat' (in case it was
-    // edited while the program was running!).
-    fclose(fpCa);
-    if( (fpCa = fopen( "./callerID.dat", "a+" ) ) == NULL )
-    {
-      printf("re-fopen() of callerID.dat failed\n");
-      return(-1);
-    }
-
-    // Write the record to the file
-    if( fputs( (const char *)buffer3, fpCa ) == EOF )
-    {
-      printf("fputs( (const char *)buffer3, fpCa ) failed\n");
-      return(-1);
-    }
-
-    // Flush the record to the file
-    if( fflush(fpCa) == EOF )
-    {
-      printf("fflush(fpCa) failed\n");
-      return(-1);
-    }
-
     // If a whitelist.dat file was present, compare the
     // caller ID string to entries in the whitelist. If a match
     // is found, accept the call and bypass the blacklist check.
@@ -477,8 +455,13 @@ int wait_for_response(fd)
     {
       if( check_whitelist( buffer3 ) == TRUE )
       {
-        // Caller ID match was found (or an error occurred),
-        // so accept the call
+        // Caller ID match was found so accept the call
+
+        // Tag and write the call record to the callerID.dat file.
+        if( tag_and_write_callerID_record( buffer3, 'W') != 0)
+        {
+          return(-1);
+        }
         continue;
       }
     }
@@ -502,6 +485,12 @@ int wait_for_response(fd)
       // truncate.c.
       truncate_records();
 #endif                            // end DO_TRUNCATE
+
+      // Tag and write the call record to the callerID.dat file.
+      if( tag_and_write_callerID_record( buffer3, 'B') != 0)
+      {
+        return(-1);
+      }
       continue;
     }
 #ifdef DO_TONES
@@ -591,7 +580,24 @@ int wait_for_response(fd)
           {
             // Write a caller ID entry to blacklist.dat.
             write_blacklist( buffer3 );
+
+            // Tag and write the call record to the callerID.dat file.
+            if( tag_and_write_callerID_record( buffer3, '*') != 0)
+            { 
+              return(-1);
+            }
             break;
+          }
+        }
+
+        // If poll time expired...
+        if(pollTime >= pollStartTime + 10 )
+        {
+          // Tag and write the call record to the callerID.dat file.
+          // (tag '-' just overwrites the existing same char).
+          if( tag_and_write_callerID_record( buffer3, '-') != 0)
+          {
+            return(-1);
           }
         }
 
@@ -600,12 +606,60 @@ int wait_for_response(fd)
         // end of the tone detection window.
         send_modem_command(fd, "ATZ\r");
         send_modem_command(fd, "AT+VCID=1\r");
+
         continue;
       }
     }
 #endif                          // end DO_TONES
 
+    // If DO_TONES is not defined...
+    // Tag and write the call record to the callerID.dat file.
+    // (tag '-' just overwrites the existing same char).
+    if( tag_and_write_callerID_record( buffer3, '-') != 0)
+    {
+      return(-1);
+    }
+
   }         // end of while()
+}
+
+//
+// Tag and write the call record to the callerID.dat file.
+// The first character in the record is used for the tag.
+// The tag indicates if the call record matched an  entry in
+// the blacklist (tag 'B'), the whitelist (tag 'W'), was
+// put on the blacklist by pressing the star (*) key
+// (tag *) or was accepted (leaves the tag character as it
+// was: '-').
+//
+int tag_and_write_callerID_record( char *buffer, char tagChar)
+{
+  // Overwrite the first character in the buffer with the tag.
+  buffer[0] = tagChar;
+
+  // Close and re-open file 'callerID.dat' (in case it was
+  // edited while the program was running!).
+  fclose(fpCa);
+  if( (fpCa = fopen( "./callerID.dat", "a+" ) ) == NULL )
+  {
+    printf("re-fopen() of callerID.dat failed\n");
+    return(-1);
+  }
+
+  // Write the record to the file
+  if( fputs( (const char *)buffer, fpCa ) == EOF )
+  {
+    printf("fputs( (const char *)buffer, fpCa ) failed\n");
+    return(-1);
+  }
+
+  // Flush the record to the file
+  if( fflush(fpCa) == EOF )
+  {
+    printf("fflush(fpCa) failed\n");
+    return(-1);
+  }
+  return(0);
 }
 
 //
