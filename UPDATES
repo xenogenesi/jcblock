@@ -274,7 +274,7 @@
 	tag character before it is written to the callerID.dat file. The tag
 	indicates how the program handled the call. Here are the possible tag
 	values:
-		B	The call record matched an entry in the blacklist so
+		B	The call record matched an entry in the blacklist, so
 			the call was terminated.
 
 		W	The call record matched an entry in the whitelist, so
@@ -288,3 +288,14 @@
 
 	All changes were made in the jcblock.c file.
 
+	01 March, 2014 Corrected tag_and_write_callerID_record() calls
+	--------------------------------------------------------------
+
+	A minor correction: Previously, the program tested this routine's
+	return value and, if the routine had failed, terminated its calling
+	routine (i.e., terminated wait_for_response()). That ended the program!
+	This change removed the tests, so the program continues. The
+	tag_and_write_callerID_record() routine still prints an error message
+	to the console if it has a problem (not likely). All changes were made
+	in the jcblock.c file.
+ 

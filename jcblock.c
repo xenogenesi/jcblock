@@ -458,10 +458,7 @@ int wait_for_response(fd)
         // Caller ID match was found so accept the call
 
         // Tag and write the call record to the callerID.dat file.
-        if( tag_and_write_callerID_record( buffer3, 'W') != 0)
-        {
-          return(-1);
-        }
+        tag_and_write_callerID_record( buffer3, 'W');
         continue;
       }
     }
@@ -487,10 +484,7 @@ int wait_for_response(fd)
 #endif                            // end DO_TRUNCATE
 
       // Tag and write the call record to the callerID.dat file.
-      if( tag_and_write_callerID_record( buffer3, 'B') != 0)
-      {
-        return(-1);
-      }
+      tag_and_write_callerID_record( buffer3, 'B');
       continue;
     }
 #ifdef DO_TONES
@@ -579,12 +573,16 @@ int wait_for_response(fd)
           if( tonesPoll() == TRUE )
           {
             // Write a caller ID entry to blacklist.dat.
-            write_blacklist( buffer3 );
-
-            // Tag and write the call record to the callerID.dat file.
-            if( tag_and_write_callerID_record( buffer3, '*') != 0)
-            { 
-              return(-1);
+            if( write_blacklist( buffer3 ) == TRUE)
+            {
+              // Tag and write call record to callerID.dat file.
+              tag_and_write_callerID_record( buffer3, '*');
+            }
+            else
+            {
+              // Tag and write call record to callerID.dat file.
+              // (tag '-' just overwrites the existing same char).
+              tag_and_write_callerID_record( buffer3, '-');
             }
             break;
           }
@@ -595,10 +593,7 @@ int wait_for_response(fd)
         {
           // Tag and write the call record to the callerID.dat file.
           // (tag '-' just overwrites the existing same char).
-          if( tag_and_write_callerID_record( buffer3, '-') != 0)
-          {
-            return(-1);
-          }
+          tag_and_write_callerID_record( buffer3, '-');
         }
 
         // Re-initialize the modem to return caller ID.
@@ -615,10 +610,7 @@ int wait_for_response(fd)
     // If DO_TONES is not defined...
     // Tag and write the call record to the callerID.dat file.
     // (tag '-' just overwrites the existing same char).
-    if( tag_and_write_callerID_record( buffer3, '-') != 0)
-    {
-      return(-1);
-    }
+    tag_and_write_callerID_record( buffer3, '-');
 
   }         // end of while()
 }
