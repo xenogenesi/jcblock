@@ -233,7 +233,7 @@ void close_time_save_file()
 
 //
 // Function to truncate (remove) callerID.dat records that are older
-// than one year.
+// than nine months.
 //
 int truncate_callerID_records()
 {
@@ -397,9 +397,9 @@ int truncate_callerID_records()
 
 //
 // Function to truncate (remove) blacklist.dat records that have
-// not been used to terminate a call within the last year. Note
-// that the date field in blacklist.dat records is updated each
-// time a record is used to terminate a call.
+// not been used to terminate a call within the last nine months.
+// Note that the date field in blacklist.dat records is updated
+// each time a record is used to terminate a call.
 //
 int truncate_blacklist_records()
 {
@@ -444,12 +444,25 @@ int truncate_blacklist_records()
       continue;
     }
 
-    // Make sure the date field is present and valid (if it was
-    // entered manually it might be in error). Record must contain
+    // Make sure the date field is present (if it was entered
+    // manually it might be in error). Record must contain
     // at least 25 characters plus one for the '\n' terminator.
     if( (strlen( blacklistBuf ) < 26 ) )
     {
       // Just ignore the record
+      continue;
+    }
+
+    // If the record date field indicates that this is a permanent
+    // record (i.e., contains "++++++"), add it to blacklist.dat.new.
+    if( strncmp( &blacklistBuf[19], "++++++", 6 ) == 0 )
+    {
+      if( fputs(  blacklistBuf, fpBlN ) < 0 )
+      {
+        perror( "truncate_blacklist_records: fputs(1a)" );
+        return -1;
+      }
+      numRecsWritten++;
       continue;
     }
 
@@ -634,7 +647,7 @@ int truncate_records()
 // file as a separate program. Compile it with:
 //      gcc -o truncate truncate.c
 // Manually add some records to the callerID.dat and blacklist.dat
-// files that have time fields older than one year. The program
+// files that have time fields older than nine months. The program
 // should remove them.
 #if 0
 int main()

@@ -298,4 +298,20 @@
 	tag_and_write_callerID_record() routine still prints an error message
 	to the console if it has a problem (not likely). All changes were made
 	in the jcblock.c file.
- 
+
+	05 March, 2014 Made provision for permanent blacklist records
+	-------------------------------------------------------------
+
+	Lately I have been getting calls with caller IDs that start with the
+	letter'V' followed by nineteen (seemingly random) digits. I was able
+	to partially block them by adding blacklist records with these first
+	fields: V0?, V1?, V2?, V3?, V4?, V5? V6?, V7?, V8?, V9?. But if one (or
+	more) of these records was not used to terminate a call in nine months,
+	it was removed by the truncate routines. This pointed to the need for a
+	way to specify permanent blacklist records. So code was added to the
+	truncate_blacklist_records() routine to test for a record date field
+	containing '++++++'. When it is found, the record is not deleted. All
+	code changes were made in files jcblock.c and truncate.c. Some comment
+	editing was also done in files: blacklist.dat.examples and
+	whitelist.dat.examples.
+

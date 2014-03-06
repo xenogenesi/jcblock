@@ -979,33 +979,38 @@ static bool check_blacklist( char *callstr )
         return(FALSE);
       }
 
-      // Get the current date from the caller ID string
-      strncpy( call_date, &dateptr[7], 6 );
-
-      // Terminate the string
-      call_date[6] = 0;
-
-      // Update the date in the blackbufsave record
-      strncpy( &blackbufsave[19], call_date, 6 );
-
-      // Write the record back to the blacklist.dat file
-      fseek( fpBl, file_pos_last, SEEK_SET );
-      if( fputs( blackbufsave, fpBl ) == EOF )
+      // Check the date field in blackbufsave. If it is not
+      // '++++++' (not a permanent record), change it.
+      if( strncmp( &blackbufsave[19], "++++++", 6 ) != 0 )
       {
-        printf("fputs(blackbufsave, fpBl) failed\n" );
-        return(FALSE);
-      }
+        // Get the current date from the caller ID string
+        strncpy( call_date, &dateptr[7], 6 );
 
-      // Flush the string to the file
-      if( fflush(fpBl) == EOF )
-      {
-        printf("fflush(fpBl) failed\n");
-        return(FALSE);
-      }
+        // Terminate the string
+        call_date[6] = 0;
 
-      // Force kernel file buffers to the disk
-      // (probably not necessary)
-      sync();
+        // Update the date in the blackbufsave record
+        strncpy( &blackbufsave[19], call_date, 6 );
+
+        // Write the record back to the blacklist.dat file
+        fseek( fpBl, file_pos_last, SEEK_SET );
+        if( fputs( blackbufsave, fpBl ) == EOF )
+        {
+          printf("fputs(blackbufsave, fpBl) failed\n" );
+          return(FALSE);
+        }
+
+        // Flush the string to the file
+        if( fflush(fpBl) == EOF )
+        {
+          printf("fflush(fpBl) failed\n");
+          return(FALSE);
+        }
+
+        // Force kernel file buffers to the disk
+        // (probably not necessary)
+        sync();
+      }
 
       // A blacklist.dat entry matched, so return TRUE
       return(TRUE);

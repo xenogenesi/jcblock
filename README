@@ -30,6 +30,11 @@
 	program handled the call. See the 23 February, 2014 entry in
 	the UPDATES file for details.
 
+	(03/2014): Made provision for permanent blacklist records.
+	These records will not be removed by the routines in the
+	terminate.c file when they are called. See the 5 March, 2014
+	entry in the UPDATES file for details.
+
 	MODEM SELECTION:
 
 	I have been using the USRobotics model 5686G modem since
