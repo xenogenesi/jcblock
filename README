@@ -35,6 +35,12 @@
 	terminate.c file when they are called. See the 5 March, 2014
 	entry in the UPDATES file for details.
 
+	(04/2014): Changed the method to terminate a call. The new code
+	is faster, so a blacklisted call is terminated after just one
+	ring. The telephone touch pad '*-key' method to add a call to
+	the blacklist may now be used after the second or third ring.
+	See the 8 April, 2014 entry in the UPDATES file for details.
+
 	MODEM SELECTION:
 
 	I have been using the USRobotics model 5686G modem since
@@ -71,9 +77,8 @@
         the caller ID string for a match. If it finds a match it accepts
         the call. If a match is not found, it reads strings from file
         blacklist.dat and scans them against the caller ID string for a
-        match. If it finds a match to a string in the blacklist, it sends
-        an off-hook command (ATH1) to the modem, followed by an on-hook
-        command (ATH0). This terminates the junk call.
+        match. If it finds a match to a string in the blacklist, it
+	terminates the junk call.
   
         The program also updates the date field of a matching whitelist or
         blacklist entry. Entries that are old may then be identified so
@@ -93,17 +98,17 @@
         current call if the operator presses the star (*, asterick) key on
 	a touch tone telephone handset during an allotted time period. The
 	program detects the tone via a microphone placed near the modem
-	speaker.  Functions in file tones.c detect the presence of tones
+	speaker. Functions in file tones.c detect the presence of tones
 	(941 Hz and 1209 Hz) produced by pressing the star (*) key. If an
 	answering machine is installed on the same line this feature must
 	be restricted to be active only if a call is answered after the
-	third ring (the answering machine *must* also be set to answer on
-	the fourth or later ring). If an answering machine is not
-	installed on the line the star key feature may be made available
-	for calls answered after the third or later ring. This option is
-	controlled by a conditional compile flag (see the 09/24/10 UPDATES
-	file entry for more details). Also see the NOTE: in the file
-	concerning an ALSA version conditional compile selection.
+	second or third ring (the answering machine *must* also be set to
+	answer on the fourth or later ring). If an answering machine is not
+	installed on the line the star key feature is available for calls
+	answered after the second or later ring. This option is controlled
+	by a conditional compile flag (see the 09/24/10 UPDATES file entry
+	for more details). Also see the NOTE: in the file concerning an
+	ALSA version conditional compile selection.
 
         The program requires a serial modem that can deliver caller
         ID and contains a speaker. The recommended unit is the USRobotics

@@ -29,9 +29,7 @@
  *	the call. If a match is not found, it reads strings from file
  *	blacklist.dat and scans them against the caller ID string for a
  *	match. If it finds a match to a string in the blacklist, it sends
- *	an off-hook command (ATH1) to the modem, followed optionally by
- *	commands to generate a fax tone and finally by an on-hook command
- *	(ATH0). This terminates the junk call.
+ *	modem commands that terminate the junk call.
  *
  *	For more details, see the README and UPDATES files.
  */
@@ -72,9 +70,6 @@
 // modems.
 //#define DO_FAX_TONE
 
-#define CALLERID_YES 1
-#define CALLERID_NO 0
-
 #define OPEN_PORT_BLOCKED 1
 #define OPEN_PORT_POLLED  0
 
@@ -98,8 +93,8 @@ static bool check_blacklist( char *callstr );
 static bool write_blacklist( char *callstr );
 static bool check_whitelist( char * callstr );
 static void open_port( int mode );
-static void close_open_port( int doCallerID );
-int init_modem(int fd, int doCallerID );
+static void close_open_port();
+int init_modem(int fd);
 int tag_and_write_callerID_record( char *buffer, char tagChar);
 
 static char *copyright = "\n"
@@ -169,7 +164,7 @@ int main(int argc, char **argv)
   open_port( OPEN_PORT_BLOCKED );
 
   // Initialize the modem
-  if( init_modem(fd, CALLERID_YES ) != 0 )
+  if( init_modem(fd) != 0 )
   {
     printf("init_modem() failed\n");
     close(fd);
@@ -204,10 +199,8 @@ modemInitialized = TRUE;
 
 //
 // Initialize the modem.
-// The 'doCallerID' argument allows initialization with
-// or without sending the caller ID command.
 //
-int init_modem(int fd, int doCallerID )
+int init_modem(int fd )
 {
   // Reset the modem
 #ifdef DEBUG
@@ -220,28 +213,41 @@ int init_modem(int fd, int doCallerID )
 
   sleep(1);   // needed
 
+  // Initialize the modem to terminate a call when its
+  // serial port DTR line goes inactive. DTR goes inactive
+  // when the connection to its serial port is closed. This
+  // will be used to terminate a call found on the blacklist
+  // (with some modems, "AT&D3\r" may be needed).
+  if( send_modem_command(fd, "AT&D2\r") != 0 )
+  {
+    return(-1);
+  }
+
   // If operating in a non-US telephone system region,
   // insert an appropriate "AT+GCI=XX\r" modem command here.
   // See the README file for details.
 
-  if( doCallerID )
-  {
-    // Tell modem to return caller ID. Note: different
-    // modems use different commands here. If this
-    // command hangs the program, try these others:
-    // AT#CID=1, AT#CLS=8#CID=1, AT#CID=2, AT%CCID=1,
-    // AT%CCID=2, AT#CC1, AT*ID1 or check your modem
-    // documentation. The US Robotics 5686G requires
-    // AT+VCID=1. The 5686E requires AT#CID=1.
+  // Tell the modem to return caller ID. Note: different
+  // modems use different commands here. If this command
+  // hangs the program, try these others:
+  // AT#CID=1,  AT#CLS=8#CID=1,  AT#CID=2,  AT%CCID=1,
+  // AT%CCID=2,  AT#CC1,  AT*ID1 or check your modem
+  // documentation. The US Robotics 5686G requires
+  // AT+VCID=1 or AT#CID=1 (it appears, depending on its
+  // firmware version).
 #ifdef DEBUG
 printf("sending caller ID command...\n");
 #endif
-    if( send_modem_command(fd, "AT+VCID=1\r") != 0 )
-    {
-      return(-1);
-    }
+  if( send_modem_command(fd, "AT+VCID=1\r") != 0 )
+  {
+    return(-1);
   }
-
+#ifdef DO_FAX_TONE
+  // Put modem in FAX service class mode
+  // (note: you may need to send "AT+FCLASS=2\r"
+  // instead).
+  send_modem_command(fd,"AT+FCLASS=2.0\r");
+#endif
   return(0);
 }
 
@@ -488,13 +494,14 @@ int wait_for_response(fd)
       continue;
     }
 #ifdef DO_TONES
-    // At this point the phone will ring until the call has been
-    // answered or the caller hangs up (RING strings stop arriving).
-    // Listen for a star (*) key press by polling the microphone. If
-    // a press is detected (within the timed window), build and add
-    // an entry to the blacklist for this call.
     else
     {
+      // At this point the phone will ring until the call has been
+      // answered or the caller hangs up (RING strings stop arriving).
+      // Listen for a star (*) key press by polling the microphone. If
+      // a press is detected (within the timed window), build and add
+      // an entry to the blacklist for this call.
+      //
       // Get current time (seconds since Unix Epoch)
       if( (pollStartTime = time( NULL ) ) == -1 )
       {
@@ -527,20 +534,20 @@ int wait_for_response(fd)
       open_port( OPEN_PORT_BLOCKED );
 
 #ifdef ANS_MACHINE
-      // If the call is answered after three rings, poll for a
-      // touchtone star (*) key press. Note that if an answering
+      // If the call is answered after two or three rings, poll for
+      // a touchtone star (*) key press. Note that if an answering
       // machine is connected to the line, the star feature is only
-      // available if the call is answered after the third ring.
-      // This is necessary to avoid conflict with answering machines.
-      // The answering machine *must be* set to answer on the fourth
-      // or later ring. See the README and UPDATES files for further
-      // details.
-      if( numRings == 3 )
+      // available if the call is answered after the second or third
+      // ring. This is necessary to avoid conflict with answering
+      // machines. The answering machine *must be* set to answer on
+      // the fourth or later ring. See the README and UPDATES files
+      // for further details.
+      if( numRings == 2 || numRings == 3 )
       {
 #else
       // If no answering machine is connected to the same telephone
-      // line, the star key feature is available for calls answered after
-      // three or more rings.
+      // line, the star key feature is available for calls answered
+      // after two or more rings.
       if( TRUE )
       {
 #endif
@@ -807,8 +814,7 @@ static bool check_whitelist( char *callstr )
 //
 // Compare strings in the 'blacklist.dat' file to fields in the
 // received caller ID string. If a blacklist string is present,
-// send off-hook (ATH1) and on-hook (ATH0) to the modem to
-// terminate the call...
+// send commands to the modem to that will terminate the call...
 //
 static bool check_blacklist( char *callstr )
 {
@@ -913,64 +919,24 @@ static bool check_blacklist( char *callstr )
 #ifdef DEBUG
       printf("blacklist entry matches: %s\n", blackbuf );
 #endif
-      // At this point, the modem is in data mode. It must
-      // be returned to command mode to send it the off-hook
-      // and on-hook commands. For the modem used, command
-      // 'AT+++' did not work. The only way I could find to
-      // put it back in command mode was to close, open and
-      // reinitialize the connection. This clears the DTR line
-      // which resets the modem to command mode. To accomplish
-      // this in time (before the next ring), the caller ID
-      // command is not sent. Later, the modem is again
-      // reinitialized with caller ID activated. This is all
-      // kind of crude, but it works...
-      close_open_port( CALLERID_NO );
-
-      usleep( 250000 );   // quarter second
-
-      // Send off hook command
-#ifdef DEBUG
-      printf("sending off hook\n");
-#endif
-      send_modem_command(fd, "ATH1\r");
+      sleep(1);
 
 #ifdef DO_FAX_TONE
-      // Put modem in fax service class command mode
-      // (note:you may need to send "AT+FCLASS=2\r"
-      // instead).
+      // Send an ATA command. Don't wait for a response.
+      // Wait five seconds and return. This command starts
+      // with a CED tone (see UPDATES file for CED
+      // definition). That simulates a fax initial response.
 #ifdef DEBUG
-      printf("sending AT+FCLASS=2.0 command\n");
-#endif
-      send_modem_command(fd,"AT+FCLASS=2.0\r");
-
-      // Send an ATA command. Don't wait for a
-      // response. Wait five seconds and return.
-      // This command starts with a CED tone
-      // (see UPDATES file for CED definition).
-      // That simulates a fax initial response.
-#ifdef DEBUG
-      printf("sending ATA command\n");
+      printf("sending CED tone ATA command\n");
 #endif
       send_timed_modem_command(fd, "ATA\r", 5);
 
-      // Put modem back into normal modem command mode.
-      send_modem_command(fd, "AT+FCLASS=0\r");
-
-#else			// for non-fax modems...
-      sleep(1);
 #endif                  // end of DO_FAX_TONE
 
-      // Send on hook command
-#ifdef DEBUG
-      printf("sending on hook\n");
-#endif
-      send_modem_command(fd, "ATH0\r");
-
-      sleep(1);
-
-      // Now, to prepare for the next call, close and reopen
-      // the port with caller ID activated.
-      close_open_port( CALLERID_YES );
+      // Terminate the call by closing the modem serial port.
+      // Then re-open it and re-initialize the modem to
+      // prepare for the next call.
+      close_open_port();
 
       // Make sure the 'DATE = ' field is present
       if( (dateptr = strstr( callstr, "DATE = " ) ) == NULL )
@@ -1233,11 +1199,13 @@ static void open_port(int mode )
 
 
 //
-// Function to close and open the serial port to disable the DTR
-// line. Needed to switch the modem from data mode back into
-// command mode.
+// Close the serial port connection to the modem to
+// disable its DTR line. Since the modem was initialized
+// with command 'AT&D2\r' (see init_modem()), the modem
+// will terminate the current call. Then re-open the
+// port and re-initialize the modem.
 //
-static void close_open_port( int doCallerID )
+static void close_open_port()
 {
   // Close the port
   close(fd);
@@ -1247,7 +1215,7 @@ static void close_open_port( int doCallerID )
   open_port( OPEN_PORT_BLOCKED );
 
   usleep( 250000 );   // quarter second
-  init_modem(fd, doCallerID );
+  init_modem(fd);
 }
 
 //

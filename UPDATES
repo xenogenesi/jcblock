@@ -315,3 +315,21 @@
 	editing was also done in files: blacklist.dat.examples and
 	whitelist.dat.examples.
 
+	08 April, 2014 Changed method of terminating a call
+	---------------------------------------------------
+
+	A project collaborator informed me of a much better way to terminate a
+	call. Instead of sending off-hook and on-hook commands, the new method
+	uses properties of modem initialization command: 'AT&D2\r' to accomplish
+	the termination. This command instructs the modem to terminate the
+	current call if the modem's serial port DTR line becomes inactive. This
+	line becomes inactive when the port is closed. So the program closes the
+	port and then re-opens and re-initializes it to accomplish call
+	termination (see function close_open_port()). The new method is faster,
+	so a blacklisted call gets terminated after just one ring.  With this
+	change, the '*-key' method for automatically adding a call to the
+	blacklist was extended so that it may be used after the second or third
+	ring if an answer machine is present, or for any ring after the first if
+	not. All code changes were made in the jcblock.c file. The README file
+	was updated to reflect the changes.
+
