@@ -46,6 +46,11 @@
 	to truncate them to the standard length. See the 29 April,
 	2014 entry in the UPDATES file for details.
 
+	(04/2014): Added code to broadcast call records via UDP
+	datagrams to waiting client programs. This is an optional
+	feature. See the 29 April, 2014 entry in the UPDATES file for
+	details.
+
 	MODEM SELECTION:
 
 	I have been using the USRobotics model 5686G modem since

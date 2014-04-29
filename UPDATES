@@ -344,3 +344,25 @@
 		V42317490200001
 	The code change was made to the jcblock.c file.
 
+	29 April, 2014 Added code to send call record UDP datagrams
+	-----------------------------------------------------------
+
+	Project collaborator Dave Brown submitted code that broadcasts call
+	records as UDP datagrams to waiting client programs. A sample Python
+	client program is included (of course, clients may be written in any
+	language). The call record is the same as the record that is stored in
+	the callerID.dat file. This is an optional feature that may be
+	activated by uncommenting preprocessor define SEND_ON_NETWORK. By
+	default it is commented out. Clients may be run on the same machine or
+	on networked LAN machines. Client machines may use wired or wireless
+	connections. The subject machines must not have communication inhibited
+	by firewalls. A LAN-to-WAN firewall is OK. With Python installed, the
+	sample client program is started with command:
+		python radioclient.py 
+
+	The jcblock.c file contains minor code changes. Most of the code is in
+	files radio.c, radio.h and radioclient.py. Dave will be submitting a
+	more extensive client program as a separate SourceForge project in the
+	near future. When it is available I will include instructions in this
+	file for locating it.
+
