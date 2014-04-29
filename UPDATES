@@ -333,3 +333,14 @@
 	not. All code changes were made in the jcblock.c file. The README file
 	was updated to reflect the changes.
 
+	29 April, 2014 Added code to truncate too-long caller ID fields
+	---------------------------------------------------------------
+
+	Recently I have been receiving calls that had caller ID fields that
+	were longer than the normal maximum of 15 characters. I added code to
+	truncate them to 15 characters. For example, caller ID:
+		V4231749020000150314
+	is now truncated to:
+		V42317490200001
+	The code change was made to the jcblock.c file.
+

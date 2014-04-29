@@ -18,8 +18,8 @@
 	after one year. See the 28 December, 2013 entry in the UPDATES
 	file for details.
 
-	(02/2014): Code was added that emits a fax tone after the
-	off-hook command. This feature is optional and is designed to
+	(02/2014): Code was added that emits a fax tone to a black-
+	listed caller. This feature is optional and is designed to
 	work with fax modems. This option will cause some predictive
 	dialers to reject the number and remove it from their call
 	list. See the 20 February, 2014 entry in the UPDATES file for
@@ -40,6 +40,11 @@
 	ring. The telephone touch pad '*-key' method to add a call to
 	the blacklist may now be used after the second or third ring.
 	See the 8 April, 2014 entry in the UPDATES file for details.
+
+	(04/2014): Some recent calls have had caller ID fields that
+	were longer than the standard length (15 chars). Added code
+	to truncate them to the standard length. See the 29 April,
+	2014 entry in the UPDATES file for details.
 
 	MODEM SELECTION:
 

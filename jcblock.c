@@ -354,6 +354,19 @@ int wait_for_response(fd)
     nbytes = read( fd, buffer, 250 );
     inBlockedReadCall = FALSE;
 
+    // Occasionally a call comes in that has a caller ID
+    // field that is too long! Example:
+    //     V4231749020000150314
+    // Truncate it to the standard length (15 chars):
+    //     V42317490200001
+    if( nbytes > 71 )
+    {
+      nbytes = 71;
+      buffer[69] = '\r';
+      buffer[70] = '\n';
+      buffer[71] = 0;
+    }
+
     // Replace '\n' and '\r' characters with '-' characters
     for( i = 0; i < nbytes; i++ )
     {
