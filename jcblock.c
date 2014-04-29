@@ -70,6 +70,15 @@
 // modems.
 //#define DO_FAX_TONE
 
+// The program optionally supports sending received call records as
+// network UDP datagrams to listening client programs. Uncomment the
+// following define to activate this feature.
+//#define SEND_ON_NETWORK
+
+#ifdef SEND_ON_NETWORK
+#include "radio.h"
+#endif
+
 #define OPEN_PORT_BLOCKED 1
 #define OPEN_PORT_POLLED  0
 
@@ -648,6 +657,11 @@ int tag_and_write_callerID_record( char *buffer, char tagChar)
 {
   // Overwrite the first character in the buffer with the tag.
   buffer[0] = tagChar;
+
+#ifdef SEND_ON_NETWORK
+    // Socket broadcast the buffer's contents.
+    broadcast(buffer);
+#endif
 
   // Close and re-open file 'callerID.dat' (in case it was
   // edited while the program was running!).
