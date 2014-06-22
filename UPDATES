@@ -105,7 +105,7 @@
 	that the star key feature is active only if the phone is answered after
 	the third ring (normal operation, since the third ring indicates that the
 	call was not blocked). The answering machine *must* then be set to pick
-	up after the fourth (or later) ring (most people to this). If an answering
+	up after the fourth (or later) ring (most people do this). If an answering
 	machine is not installed on the same line, a conditional compile flag may
 	be commented out to remove this restriction and the star key feature will
 	then be available if the call is answered after the third (or later) ring.
@@ -355,14 +355,55 @@
 	activated by uncommenting preprocessor define SEND_ON_NETWORK. By
 	default it is commented out. Clients may be run on the same machine or
 	on networked LAN machines. Client machines may use wired or wireless
-	connections. The subject machines must not have communication inhibited
-	by firewalls. A LAN-to-WAN firewall is OK. With Python installed, the
-	sample client program is started with command:
+	connections. The UDP connection uses port 9753, so the machines must
+	have that port open (i.e., not blocked by firewalls). With Python
+	installed, the sample client program may be started with command:
 		python radioclient.py 
 
 	The jcblock.c file contains minor code changes. Most of the code is in
 	files radio.c, radio.h and radioclient.py. Dave will be submitting a
-	more extensive client program as a separate SourceForge project in the
-	near future. When it is available I will include instructions in this
-	file for locating it.
+	more extensive client program as a separate project in the near future.
+	When it is available I will include instructions in this file for
+	locating it.
 
+	13 May, 2014 A reference to Dave's UDP-Python project
+	-----------------------------------------------------
+
+	Dave has a GitHub site for his 'jcmanage' project at:
+
+		https://github.com/smurfless1/jcmanage
+
+	It is a work-in-progress, so check back from time to time.
+
+	03 June, 2014 non-FAX operation on a FAX USRobotics 5686G modem
+	---------------------------------------------------------------
+
+	In testing the non-FAX mode on my 5686G FAX modem I discovered that
+	the 1-ring-to-block method for terminating a call was not working.
+	This update corrects the problem. For the non-FAX mode it makes
+	sure the modem is in the non-FAX command mode by sending command
+	"AT+FCLASS=0\r". Then, to get the DTR-drop trick to cancel the call,
+	I had to include timed command "ATA\r" with a one-second timeout.
+	If you have been running with a non-FAX modem and the program has
+	been operating correctly, this change should not affect you.
+
+	22 June, 2014 Provision for time-limited "beep" *-key tone
+	----------------------------------------------------------
+
+	For phones that send a time-limited "beep" when the *-key is
+	pressed (e.g., wireless phones), this option allows the operator to
+	press the *-key twice to indicate that a blacklist entry should be
+	added for the call. Note that there is some risk that a "false
+	positive" result may occur. That is, the algorithm may interpret
+	"audio noise" as a beep and create an unintended blacklist entry for
+	the call. The noise can come from: 1) caller audio, 2) audio in the
+	room where the phone is located or 3) audio from the room where the
+	modem is located. Requiring two beeps helps to mitigate the risk.
+	A way to avoid the risk is to put important calls on the whitelist.
+	The user must still: 1) wait for a second or third ring before
+	answering, 2) wait for the window-open "clicks" and, 3) in the ten
+	second window, enter two (or more) *-key presses. Note that the
+	original detection method (for phones with non-time-limited tone
+	generation when the *-key is pressed) is still present whether
+	DO_BEEPS option is activated or not. This option is deactivated by
+	default in the tones.c file. All changes were made in that file.  

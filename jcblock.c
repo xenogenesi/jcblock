@@ -68,7 +68,7 @@
 // not work with your fax modem, try: AT+FCLASS=2). By default this is
 // commented out so that the program will run with fax and non-fax
 // modems.
-//#define DO_FAX_TONE
+#define DO_FAX_TONE
 
 // The program optionally supports sending received call records as
 // network UDP datagrams to listening client programs. Uncomment the
@@ -256,6 +256,9 @@ printf("sending caller ID command...\n");
   // (note: you may need to send "AT+FCLASS=2\r"
   // instead).
   send_modem_command(fd,"AT+FCLASS=2.0\r");
+#else			// non-FAX mode
+  // Make sure modem is in non-FAX command mode.
+  send_modem_command(fd,"AT+FCLASS=0\r");
 #endif
   return(0);
 }
@@ -641,7 +644,7 @@ int wait_for_response(fd)
     // (tag '-' just overwrites the existing same char).
     tag_and_write_callerID_record( buffer3, '-');
 
-  }         // end of while()
+  }         // end of while(1) loop
 }
 
 //
@@ -957,8 +960,12 @@ static bool check_blacklist( char *callstr )
       printf("sending CED tone ATA command\n");
 #endif
       send_timed_modem_command(fd, "ATA\r", 5);
-
-#endif                  // end of DO_FAX_TONE
+#else			// non-FAX mode
+      // Send an ATA command. Don't wait for a response.
+      // Wait one second and return. This command seems to
+      // be needed in the non-FAX mode (don't know why!).
+      send_timed_modem_command(fd, "ATA\r", 1);
+#endif
 
       // Terminate the call by closing the modem serial port.
       // Then re-open it and re-initialize the modem to
