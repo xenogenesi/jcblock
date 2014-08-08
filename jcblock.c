@@ -591,6 +591,10 @@ int wait_for_response(fd)
         send_modem_command(fd, "ATH0\r"); // on hook
         send_modem_command(fd, "ATH1\r"); // off hook
 
+	// Remove any audio samples currently in the audio buffer (from a
+	// previous call).
+	tonesClearBuffer();
+
         // Get current time (seconds since Unix Epoch)
         if( (pollStartTime = time( NULL ) ) == -1 )
         {

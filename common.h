@@ -31,6 +31,7 @@ typedef int bool;
 
 // Declarations for functions defined in file tones.c.
 void tonesInit();
+void tonesClearBuffer();
 bool tonesPoll();
 void tonesClose();
 

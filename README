@@ -51,6 +51,19 @@
 	feature. See the 29 April, 2014 entry in the UPDATES file for
 	details.
 
+	(06/2014): For phones that send a time-limited "beep" when the
+	*-key is pressed (e.g., most wireless phones), this option allows
+	the operator to press the *-key twice to indicate that a
+	blacklist entry should be added for the call. The code relies on
+	two conditions to minimize the risk of a false detection: 1) the
+	*-key tone duration time is known and is always the same, 2) a
+	confirmation second *-key press is required. See the 22 June,
+	2014 entry in the UPDATES file for details.
+
+        (08/2014): Added function tonesClearBuffer() to remove tone
+	samples remaining in the ALSA buffer from the previous call.
+	See the 08 August, 2014 entry in the UPDATES file for details.
+
 	MODEM SELECTION:
 
 	I have been using the USRobotics model 5686G modem since

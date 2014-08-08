@@ -407,3 +407,22 @@
 	generation when the *-key is pressed) is still present whether
 	DO_BEEPS option is activated or not. This option is deactivated by
 	default in the tones.c file. All changes were made in that file.  
+
+	08 August, 2014 Clear audio buffer before tones polling
+	-------------------------------------------------------
+
+	If you are not using the tones detection feature, this change will
+	not affect you. Recently I had been seeing occasional false postings
+	of calls to the blacklist. The tones detection algorithm was
+	indicating ten detections immediately when the call was received. I
+	suspect that audio samples from the previous call were still in the
+	ALSA buffer (very hard to tell what happens in the ALSA library
+	functions!). I added function tonesClearBuffer(). It is called just
+	before tone polling begins in jcblock.c (before the tonesPoll() calls).
+	The function is located in the tones.c file. It calls ALSA library
+	functions snd_pcm_drop() and snd_pcm_prepare(). The first removes
+	any audio samples currently in the buffer. The second reinitializes
+	the channel. Files jcblock.c, tones.c and common.h were changed.
+	(Why this bug showed up at this late date is a mystery!)
+
+

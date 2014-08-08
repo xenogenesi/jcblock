@@ -73,12 +73,12 @@
 // audio, 2) audio in the room where the phone is located or 3) audio
 // from the room where the modem is located. Requiring two beeps helps
 // to mitigate the risk. A way to avoid the risk is to put important
-// calls on the whitelist. This option is deactivated by default.
+// calls on the whitelist. This option is activated by default.
 // Note that the original detection method (for phones with non-time-
 // limited tone generation when the *-key is pressed) is still present
-// whether DO_BEEPS is active or not. To activate it, uncomment
+// whether DO_BEEPS is active or not. To deactivate it, comment out
 // '#define DO_BEEPS' below.
-//#define DO_BEEPS
+#define DO_BEEPS
 
 /* Goetzel globals */
 
@@ -328,6 +328,25 @@ void tonesInit()
   InitGoertzel( N_HI, TARGET_FREQ_HI, &sine_hi, &cosine_hi, &coeff_hi );
 }
 
+/*
+ * Remove any samples left in the audio buffer from a
+ * previous call.
+ */
+void tonesClearBuffer()
+{
+  // Clear the buffer
+  if( snd_pcm_drop(handle) < 0 ) {
+    fprintf(stderr, "snd_pcm_drop() call failed\n");
+    exit(1);
+  }
+
+  // Re-prepare the channel for use
+  if( snd_pcm_prepare(handle) < 0 ) {
+    fprintf(stderr, "snd_pcm_prepare() call failed\n");
+    exit(1);
+  }
+}
+
 bool tonesPoll()
 {
   int index;
@@ -347,12 +366,9 @@ bool tonesPoll()
 
     if (rc == -EPIPE)
     {
-      /*
-       * EPIPE means overrun. Audio hardware buffer wrapped
-       * and overwrote.
-       */
-      //fprintf(stderr, "overrun occurred (not serious)\n");
-      snd_pcm_prepare(handle);      // this resets (clears) it
+      /* EPIPE means overrun */
+      fprintf(stderr, "overrun occurred (not serious)\n");
+      snd_pcm_prepare(handle);
       numBeeps = 0;
       numDetLoWas = numDetHiWas = 0;
       numDetLo = numDetHi = 0;
