@@ -425,4 +425,17 @@
 	the channel. Files jcblock.c, tones.c and common.h were changed.
 	(Why this bug showed up at this late date is a mystery!)
 
+	20 August, 2014 Initialize numBeeps before tones polling
+	--------------------------------------------------------
 
+	I had a case where a number was placed on the blacklist when only
+	one tone beep was detected. This could happen if only one beep was
+	detected for the previous call and 'numBeeps' was left set to 1.
+	To correct this, numBeeps needs to be set to 0 before tone polling
+	starts. The most convenient place to do this was in function
+	tonesClearBuffer(), even though the operation has nothing to do
+	with clearing the buffer. This was a dumb error on my part. After
+	fifty years of programming I should have known better (yes, there
+	were a few computers around in 1964!). Sorry for the inconvenience.
+	The only code file changed was tones.c.
+	

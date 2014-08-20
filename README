@@ -64,6 +64,10 @@
 	samples remaining in the ALSA buffer from the previous call.
 	See the 08 August, 2014 entry in the UPDATES file for details.
 
+	(20/2014): Added a statement to tonesClearBuffer() to zero
+	the 'numBeeps' counter. See the 20 August, 2014 entry in the
+	UPDATES file for details.
+
 	MODEM SELECTION:
 
 	I have been using the USRobotics model 5686G modem since

@@ -330,7 +330,8 @@ void tonesInit()
 
 /*
  * Remove any samples left in the audio buffer from a
- * previous call.
+ * previous call. Also, zero numBeeps (not related to buffer
+ * clearing, but done here for convenience).
  */
 void tonesClearBuffer()
 {
@@ -345,6 +346,8 @@ void tonesClearBuffer()
     fprintf(stderr, "snd_pcm_prepare() call failed\n");
     exit(1);
   }
+
+  numBeeps = 0;	// in case it was still set from the previous call
 }
 
 bool tonesPoll()
