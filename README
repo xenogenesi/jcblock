@@ -8,8 +8,9 @@
 	(04/2013): Several people have been successful running the
 	program on a Raspberry Pi processor using a USB modem. The
 	modems that have been used successfully are: US Robotics
-	USR805637 and TRENDnet TFM-561U. There is a good writeup on
-	the details at:
+	USR805637 and TRENDnet TFM-561U (note: these modems may or
+	may not deliver caller ID when used in non-US telephone
+	system areas). There is a good writeup on the details at:
 	http://weeklytechforum.com/2013/03/28/
 	                  block-unwanted-calls-with-a-raspberry-pi/
 
@@ -239,31 +240,23 @@
 
         Country codes:
 
-        The USRobotics (and probably other modems) must be sent a country
-        code command if the country of use is other than USA (the default).
-	The command syntax is: "AT+GCI=XX\r", where XX is the country code.
-        The codes for the USRobotics modem are as follows (check your modem
-	'Command Set' documentation for confirmation):
+	Note: Recent tests indicate that the USRobotics 5686G modem does
+	not now (or maybe never did) accept country codes. Specifically,
+	the "AT+GCI=B5\r" command returns ERROR. I don't remember where I
+	got the idea that it did -- I wrote the code a long time ago. I
+	also did not have a way to test it, since I don't have access to
+	a non-US phone system. I also have done a firmware upgrade since
+	then, so the facility may have been abandoned. I also don't know
+	what the codes accomplish: do they solve the caller ID compat-
+	ibility problem, etc.?
 
-	Austria		0A	Hungary		51	Norway		82
-	Belgium		0F	Iceland		52	Poland		8A
-	Cyprus		2D	Ireland		57	Portugal	8B
-	Czech and
-	Slovak Federal	2E	Israel		58	Spain		A0
-	Republic
-	Denmark		31	Italy		59	Slovakia	FB
-	Estonia		F9	Latvia		F8	Slovenia	FC
-	Finland		3C	Liechtenstein	68	Sweden		A5
-	France		3D	Lituania	F7	Switzerland	A6
-	Germany		42	Luxembourg	69	Turkey		AE
-	Greece		46	Malta		B4	United Kingdom	B4
-				Netherlands	7B
-
-        The command should be sent in the init_modem() function after the
-	modem reset command (ATZ) is sent (the location is indicated in the
-	listing).  Other program changes may be needed to conform to
-	non-USA country telephone systems.
-
+	If you are in a non-US phone system, it presently appears that the
+	USRobotics USR805637 (or just USR5637) USB modem supports country
+	codes. Again, what they do is a mystery, but they may solve the
+	caller ID format problem described in README2. I have included a
+	list of country codes in file README2. They were listed in USR5637
+	online documentation.
+  
         Real-time prototype system:
 
         The photo shows a prototype jcblock system consisting of a

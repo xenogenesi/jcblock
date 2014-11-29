@@ -70,6 +70,20 @@
 // modems.
 #define DO_FAX_TONE
 
+// Comment out the following define if you have a modem that does not
+// need a country code to operate with your country's phone system.
+// The default modem for this project is the USRobotics 5686G. It
+// does not accept a country code, but works with the US phone system
+// without one. Therefore the following define is commented out by
+// default. If you are located in a country with non-US compatible
+// phone system, see the README files for country code details.
+//#define DO_COUNTRY_CODE
+
+// Comment out the following define if you are NOT using a Robotics
+// USB5637 modem. For this modem, calls must be terminated by using
+// the off-hook/on-hook method.
+//#define DO_USR5637_MODEM
+
 // The program optionally supports sending received call records as
 // network UDP datagrams to listening client programs. Uncomment the
 // following define to activate this feature.
@@ -232,9 +246,19 @@ int init_modem(int fd )
     return(-1);
   }
 
+#ifdef DO_COUNTRY_CODE
   // If operating in a non-US telephone system region,
   // insert an appropriate "AT+GCI=XX\r" modem command here.
-  // See the README file for details.
+  // See the README file for details (the code for the US
+  // is B5).
+#ifdef DEBUG
+printf("sending country code command...\n");
+#endif
+  if( send_modem_command(fd, "AT+GCI=B5\r") != 0 )
+  {
+    return(-1);
+  }
+#endif
 
   // Tell the modem to return caller ID. Note: different
   // modems use different commands here. If this command
@@ -964,18 +988,34 @@ static bool check_blacklist( char *callstr )
       printf("sending CED tone ATA command\n");
 #endif
       send_timed_modem_command(fd, "ATA\r", 5);
-#else			// non-FAX mode
-      // Send an ATA command. Don't wait for a response.
-      // Wait one second and return. This command seems to
-      // be needed in the non-FAX mode (don't know why!).
-      send_timed_modem_command(fd, "ATA\r", 1);
-#endif
 
       // Terminate the call by closing the modem serial port.
       // Then re-open it and re-initialize the modem to
       // prepare for the next call.
       close_open_port();
 
+#else                      // don't DO_FAX_TONE
+#ifdef DO_USR5637_MODEM
+      // Terminate the call by sending off hook and
+      // on hook commands. Then re-initialize the modem
+      // to prepare for the next call.
+      send_modem_command(fd, "ATH1\r");  // off hook
+      usleep( 250000 );    // quarter second
+      send_modem_command(fd, "ATH0\r");  // on hook
+      usleep( 250000 );    // quarter second
+      init_modem(fd);
+#else                      // don't DO_USR5637_MODEM
+      // Send an ATA command. Don't wait for a response.
+      // Wait one second and return. This command seems to
+      // be needed in the non-FAX mode (don't know why!).
+      send_timed_modem_command(fd, "ATA\r", 1);
+
+      // Terminate the call by closing the modem serial port.
+      // Then re-open it and re-initialize the modem to
+      // prepare for the next call.
+      close_open_port();
+#endif                     // end of DO_USR5637_MODEM
+#endif                     // end of DO_FAX_TONE
       // Make sure the 'DATE = ' field is present
       if( (dateptr = strstr( callstr, "DATE = " ) ) == NULL )
       {
