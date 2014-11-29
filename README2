@@ -1,0 +1,134 @@
+
+	Program: jcblock
+
+	A program to block telemarketing (junk) calls.
+
+	FILE CONTENTS:
+
+	This file contains information related to running the jcblock
+	program on a Raspberry Pi processor. Details concerning the
+	program, itself, and running it on an EMAC ebox processor with
+	a USRobotics 5686G modem (as shown in the site photos) are
+	presented in file README.
+
+	23 November 2014: Raspberry Pi System with TRENDnet modem
+	---------------------------------------------------------
+
+	A site photo shows a Raspberry Pi B+ processor (~$35) with a
+	TRENDnet TFM-561U modem (~$25). This represents a minimal
+	system for running the program. Since the modem does not have
+	a speaker, the program's tones feature is not operable (the
+	tones feature allows the operator to press the *-key on a
+	touchtone phone to automatically generate a blacklist entry
+	for the call). The FAX tone feature is also not available (this
+	feature causes a FAX tone to be sent to the caller to fool them
+	into thinking they have reached a FAX machine). The program
+	must therefore be compiled with precompiler flags DO_TONES and
+	DO_FAX_TONE commented out.
+
+	To compile the program for this hardware configuration edit
+	the makejcblock file to contain a compile command that looks
+	 like this:
+		gcc -o jcblock jcblock.c truncate.c -ldl -lm
+
+	The program will then compile on the Pi. You will need to
+	determine the USB device that the Pi assigns to the TFM when
+	it is plugged in. I find that the easiest way to do this is
+	to list the /dev/tty* device IDs with and without the device
+	installed. You will see a new device when it is plugged in.
+	It will probably be ttyACM0. So the command to run jcblock
+	would then be:
+		./jcblock -p /dev/ttyACM0
+
+	When you first run the Pi you will need to configure the system.
+	In addition to text presented when the system boots, there is a
+	README file for another of my projects, jablock, on SourceForge
+	that goes into considerable detail on this subject. There are
+	also several excellent tutorials on the web.
+
+	OPERATION:
+
+	The TFM-561U modem delivers caller ID data that is consistent
+	with USA/Canada telephone systems. Unfortunately there is no
+	worldwide standard caller ID format. There are three major
+	standards: 1) Bellcore (USA, Canada, etc.), 2) DTMF (parts of
+	Europe, etc.) and ETSI (other parts of Europe, etc.). For
+	details search the web for 'caller ID'. Here is an example
+	source:
+		http://www.ainslie.org.uk/callerid.htm
+
+	The TFM-561U uses the Bellcore format. It may be possible to
+	install a caller ID converter that converts DTMF or ETSI formats
+	to Bellcore (a "box" that goes in the phone line before the TFM).
+	Search for 'caller ID converter'. Here is a reference to an
+	EM3100 unit (also check ebay):
+
+	http://www.aliexpress.com/popular/caller-id-converter.html
+
+	I do not know if these units solve the problem (since I do not
+	have access to non-US phone systems!). If you try one, I would
+	greatly appreciate hearing from you (at: walmarheath@comcast.net
+	or add a topic to the site's Discussion menu area).
+
+	When the Pi is connected to a USRobotics 5686G modem the FAX
+	feature works (tones does not, since there is no microphone input
+	on the Pi B+ unit).
+
+	29 November 2014: Raspberry Pi System with USR5637 modem
+        ---------------------------------------------------------
+
+	A site photo shows a Raspberry Pi processor (~$35) with a
+	USRobotics USR5637 modem (~$50). As for the TFM system, this
+	modem does not have a speaker so the program's tone feature
+	is not operable. The FAX tone feature is also not operable.
+	The program must therefore be compiled with DO_TONES and
+	DO_FAX_TONE commented out. In addition, the program cannot use
+	the "DTR trick" to cancel calls (see UPDATES for details).
+	Instead, it uses the off-hook/on-hook method. To activate this,
+	DO_USR5637_MODEM must be uncommented. However, unlike the
+	USR5686G modem, this modem does accept country codes (see below).
+	So there is the possibility that the caller ID format issue
+	discussed above has been solved within the modem (if you have
+	experience with this, I would very much like to hear from you!).
+
+	The instructions for compiling and running the program are the
+	same as for the TFM system above.
+
+	COUNTRY CODES:
+
+	Some modems require a country code that is specific for the
+	country of operation. The jcblock.c program contains a pre-
+	processor define, DO_COUNTRY_CODE, which may be uncommented to
+	send a code to the modem. It does this by sending modem command:
+	"AT+GCI=XX\r", where XX is the country code. Here is a list of
+	available country codes:
+
+	Australia	09	India		53	Philippines	89
+	Austria		0A	Indonesia	54	Portugal	8B
+	Belgium		0F	Ireland		57	Singspore	9C
+	Canada		20	Italy		59	South Africa	9F
+	Denmark		31	Japan		00	Spain		A0
+	Europe		72	Korea		61	Sweden		A5
+	Finland		3C	Malaysia	6C	Switzerland	A6
+	France		3D	Mexico		73	Thailand	A9
+	Germany	04 or	42	Netherlands	7B	Turkey		AE
+	Greece		46	New Zeland	7E	United Kingdom	B4
+	Hong Kong	50	Norway		82	United States	B5
+	Hungary		51	China		26	Vietnam		BC
+
+	Note that, as indicated for the TFM-561U modem, this may not be
+	the only change needed to get the program to work with a specific
+	country's telephone system. In fact, it is not clear what the
+	country code actually does! So this may or may not help. The
+	experience of one user in Italy is that it did not solve the
+	caller ID format problem for his TFM system.
+	
+	FUTURE:	
+
+	An audio adapter board for the B+ version is supposed to be out
+	soon. It will have a microphone input. This will be used to
+	implement the tones feature. A seven inch touch screen is also
+	promised. This may be used to provide a GUI (for editing the .dat
+	files, etc.).
+
+
