@@ -1,0 +1,86 @@
+#!/bin/bash
+#
+#	jcblock program startup script for Raspberry Pi
+#	systems with Cirrus Logic Audio Card. Includes
+#	adatptations of Cirrus Reset_paths.sh and
+#	Record_from_Headset.sh configuration scripts.
+#
+#	Run this script in the background:
+#		startjcblock &
+#
+#	Reset_paths.sh code with -q amixer option:
+echo -e "\nResetting the audio card...\n"
+amixer -q -Dhw:sndrpiwsp cset name='HPOUT1 Digital Switch' off
+amixer -q -Dhw:sndrpiwsp cset name='HPOUT2 Digital Switch' off
+amixer -q -Dhw:sndrpiwsp cset name='SPDIF out Switch' off
+amixer -q -Dhw:sndrpiwsp cset name='SPDIF in Switch' off
+amixer -q -Dhw:sndrpiwsp cset name='Tx Source' AIF
+amixer -q -Dhw:sndrpiwsp cset name='AIF2TX1 Input 1' None
+amixer -q -Dhw:sndrpiwsp cset name='AIF2TX2 Input 1' None
+amixer -q -Dhw:sndrpiwsp cset name='AIF1TX1 Input 1' None
+amixer -q -Dhw:sndrpiwsp cset name='AIF1TX2 Input 1' None
+amixer -q -Dhw:sndrpiwsp cset name='HPOUT1L Input 1' None
+amixer -q -Dhw:sndrpiwsp cset name='HPOUT1R Input 1' None
+amixer -q -Dhw:sndrpiwsp cset name='HPOUT1L Input 2' None
+amixer -q -Dhw:sndrpiwsp cset name='HPOUT1R Input 2' None
+amixer -q -Dhw:sndrpiwsp cset name='HPOUT2L Input 1' None
+amixer -q -Dhw:sndrpiwsp cset name='HPOUT2R Input 1' None
+amixer -q -Dhw:sndrpiwsp cset name='HPOUT2L Input 2' None
+amixer -q -Dhw:sndrpiwsp cset name='HPOUT2R Input 2' None
+amixer -q -Dhw:sndrpiwsp cset name='Headset Mic Switch' off
+amixer -q -Dhw:sndrpiwsp cset name='DMIC Switch' off
+amixer -q -Dhw:sndrpiwsp cset name='SPKOUTL Input 1' None
+amixer -q -Dhw:sndrpiwsp cset name='SPKOUTR Input 1' None
+amixer -q -Dhw:sndrpiwsp cset name='SPKOUTL Input 2' None
+amixer -q -Dhw:sndrpiwsp cset name='SPKOUTR Input 2' None
+amixer  -Dhw:sndrpiwsp cset name='Speaker Digital Switch' off
+#
+#	Record_from_Headset.sh code with -q amixer option
+#	and 'Input 1 Volume' increased to 48 (the max).
+#
+echo -e "\nConfiguring for headset microphone...\n"
+# Record from Headset to AP
+# Set the Input PGA Volume +20dB
+amixer -q -Dhw:sndrpiwsp cset name='IN1R Volume' 20
+# Configure the input path for HPF with a low cut off for DC removal
+amixer -q -Dhw:sndrpiwsp cset name='IN1R Digital Volume' 128
+
+amixer -q -Dhw:sndrpiwsp cset name='LHPF1 Input 1' IN1R
+amixer -q -Dhw:sndrpiwsp cset name='LHPF1 Mode' High-pass
+amixer -q -Dhw:sndrpiwsp cset name='LHPF1 Coefficients' 240,3
+# Configure the Audio Interface and volume 0dB
+amixer -q -Dhw:sndrpiwsp cset name='AIF1TX1 Input 1' LHPF1
+amixer -q -Dhw:sndrpiwsp cset name='AIF1TX1 Input 1 Volume' 48
+amixer -q -Dhw:sndrpiwsp cset name='AIF1TX2 Input 1' LHPF1
+amixer -q -Dhw:sndrpiwsp cset name='AIF1TX2 Input 1 Volume' 48
+amixer -q -Dhw:sndrpiwsp cset name='Headset Mic Switch' on
+# This is set up as a dual mono record.
+#
+#	Run jcblock in the background. WARNING! if using this
+#	script for auto-startup, don't forget the '&'! If not
+#	present, the RPi will hang in jcblock and you will
+#	have to fix your microSD card on another machine!
+#
+echo -e "Starting jcblock...\n"
+cd /home/pi/<yourPath>    # Substitute your path to jcblock
+./jcblock &
+jcblockPID=$!             # Save the forked jcblock process ID
+
+# Poll for flash USB memory stick insertion to initiate shutdown.
+# Note: usbmount must be installed for this to work. To install,
+# run: sudo apt-get update. Then: sudo apt-get install usbmount
+testbool=1
+while [ $testbool -eq 1 ]
+  do
+    # Test for shutdwonDir directory presence.
+    if [ -d /media/usb0/shutdownDir ]
+      then
+        testbool=0    # only do this once...
+        echo "Starting shutdown..."
+        kill -s SIGINT $jcblockPID   # Send ctrl-C to jcblock
+        sudo shutdown -h now
+      else
+        sleep 5
+    fi
+  done
+

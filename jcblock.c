@@ -97,7 +97,7 @@
 #define OPEN_PORT_POLLED  0
 
 // Default serial port specifier.
-char *serialPort = "/dev/ttyS0";
+char *serialPort = "/dev/ttyUSB0";
 int fd;                                  // the serial port
 
 FILE *fpWh;                              // whitelist.dat file
@@ -249,7 +249,7 @@ int init_modem(int fd )
 #ifdef DO_COUNTRY_CODE
   // If operating in a non-US telephone system region,
   // insert an appropriate "AT+GCI=XX\r" modem command here.
-  // See the README file for details (the code for the US
+  // See the README2 file for details (the code for the US
   // is B5).
 #ifdef DEBUG
 printf("sending country code command...\n");
@@ -560,6 +560,7 @@ int wait_for_response(fd)
 
       // Reinitialize the serial port for polling
       close(fd);
+      usleep( 250000 );		// quarter second
       open_port( OPEN_PORT_POLLED );
 
       // Now poll until 'RING' strings stop arriving.
@@ -580,6 +581,7 @@ int wait_for_response(fd)
 
       // Reinitialize the serial port for blocked operation
       close(fd);
+      usleep( 250000 );		// quarter second
       open_port( OPEN_PORT_BLOCKED );
 
 #ifdef ANS_MACHINE
@@ -661,7 +663,6 @@ int wait_for_response(fd)
         // end of the tone detection window.
         send_modem_command(fd, "ATZ\r");
         send_modem_command(fd, "AT+VCID=1\r");
-
         continue;
       }
     }
@@ -702,7 +703,6 @@ int tag_and_write_callerID_record( char *buffer, char tagChar)
     printf("re-fopen() of callerID.dat failed\n");
     return(-1);
   }
-
   // Write the record to the file
   if( fputs( (const char *)buffer, fpCa ) == EOF )
   {
@@ -1189,7 +1189,6 @@ bool write_blacklist( char *callstr )
   // seek to its position so the following write will overwrite it.
   // If a '\n' is not found, seek to the end of the file.
   fseek( fpBl, -2, SEEK_END );
-
   if( fread( readbuf, 1, 2, fpBl ) != 2 )
   {
     printf("write_blacklist: fread() failed\n");

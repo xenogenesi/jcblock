@@ -1,9 +1,12 @@
 /*
  *	Program name: jcblock
  *
- *	File name: tones.c
+ *	File name: tonesRPi.c
+ *	A version of tones.c for the Raspberry Pi Model B+ processor with a
+ *	Cirrus Logic Audio Card (a.k.a., Wolfson Audio Card+) microphone
+ *	adapter.
  *
- *	Copyright:      Copyright 2008 Walter S. Heath
+ *	Copyright:      Copyright 2015 Walter S. Heath
  *
  *	Copy permission:
  *	This program is free software: you can redistribute it and/or modify
@@ -52,10 +55,10 @@
  *	   amplitudes and below the detection amplitudes. From the
  *	   program's printf outputs, you can determine a safe threshold
  *	   that will work for both tones when the star (*) key is pressed.
- *	   The value depends on how close the microphone is to the speaker
- *	   and therefore will vary for different hardware systems. You may
- *         have to adjust the value to get the program to work with your
- *         computer.
+ *	   The value depends on how close the microphone is to the modem
+ *	   speaker and therefore will vary for different hardware systems.
+ *	   You may have to adjust the value to get the program to work
+ *	   with your system.
  */
 #include <stdio.h>
 #include <math.h>
@@ -80,14 +83,30 @@
 // calls on the whitelist. This option is activated by default.
 // Note that the original detection method (for phones with non-time-
 // limited tone generation when the *-key is pressed) is still present
-// whether DO_BEEPS is active or not. To deactivate it, comment out
-// '#define DO_BEEPS' below.
+// whether DO_BEEPS is active or not. To deactivate "beep" processing,
+// comment out '#define DO_BEEPS' below.
 #define DO_BEEPS
+
+// Each data input frame contains 16-bit "Left" and "Right" samples
+// (same hardware for record (microphone) and playback (speaker)).
+// For a microphone the channels contain the same data.
+struct bufFrame {
+        short lSample;
+        short rSample;
+};
+
+// Input data buffer union
+static union {
+         char *buffer;
+         struct bufFrame *fPtr;
+}unIn;
 
 /* Goetzel globals */
 
 #define FLOATING	float
-#define SAMPLE		unsigned char
+
+#define NUM_FRAMES		128  // Number frames in a sample
+				     // period (in a readi())
 
 #define SAMPLING_RATE           8000.0		//8kHz
 
@@ -99,7 +118,7 @@
 #define TARGET_FREQ_HI         1209.0           //1209 Hz
 #define N_HI                    410             //1209 Hz block size
 
-#define THRESHOLD               0.1
+#define THRESHOLD               0.5
 
 #define DET_MIN                  10
 
@@ -123,31 +142,19 @@ FLOATING cosine_lo, cosine_hi;
 int N_max = N_LO;
 
 /* Make the array large enough for largest block size */
-SAMPLE testData[N_LO];
+FLOATING testData[N_LO];
 
 /* ALSA globals */
 snd_pcm_t *handle;
-char *buffer;
 int rc;
 
-/*
- * NOTE: Unfortunately, the value of the 'frames' parameter
- * is dependent upon the version of ALSA that is being used.
- * For older versions, a value of 32 works. For newer versions
- * the value must be 128 or more. For version 1.0.21 (included
- * with Ubuntu 10.04, Linux 2.6.32-25-generic) value 128 is
- * needed. For version 1.0.13 (Knoppix, Linux 2.6.19) value
- * 32 is needed.This value also works for the ALSA version
- * included with Ubuntu 8.04. The value is set to 128 here to
- * be compatible with newer versions of ALSA. Be aware that
- * you may need to set it to 32 for your version.
- */
-snd_pcm_uframes_t frames = 128;
+/* Set the number of frames in a sample period */
+snd_pcm_uframes_t frames = NUM_FRAMES;
 
 /* Prototypes */
 void InitGoertzel(int N, int target_freq, FLOATING *sine, 
                        FLOATING *cosine, FLOATING *coeff);
-void ProcessSample(FLOATING coeff, SAMPLE sample);
+void ProcessSample(FLOATING coeff, FLOATING sample);
 void GetRealImag(FLOATING *realPart, FLOATING *imagPart, 
                           FLOATING sine, FLOATING cosine);
 bool ProcessToneSamples(int N, FLOATING sine, 
@@ -182,7 +189,7 @@ void InitGoertzel(int N, int target_freq, FLOATING *sine,
 }
 
 /* Call this routine for every sample. */
-void ProcessSample(FLOATING coeff, SAMPLE sample)
+void ProcessSample(FLOATING coeff, FLOATING sample)
 {
   FLOATING Q0;
   Q0 = coeff * Q1 - Q2 + (FLOATING) sample;
@@ -259,14 +266,19 @@ bool ProcessToneSamples(int N, FLOATING sine,
  */
 void InitALSA(void)
 {
-  long loops;
-  int size;
+  int bytes_per_frame;
+  int bufferSize;
   snd_pcm_hw_params_t *params;
   unsigned int val;
   int dir;
 
-  /* Open PCM device for recording (capture). */
-  rc = snd_pcm_open(&handle, "default",
+  /*
+   * Open the PCM device for recording (capture).
+   * Note: the device ID is: "hw:sndrpiwsp".
+   * It is also the "default" device if no other
+   * audio device is present.
+   */
+    rc = snd_pcm_open(&handle, "hw:sndrpiwsp",
                     SND_PCM_STREAM_CAPTURE, 0);
   if (rc < 0) {
     fprintf(stderr,
@@ -287,21 +299,20 @@ void InitALSA(void)
   snd_pcm_hw_params_set_access(handle, params,
                       SND_PCM_ACCESS_RW_INTERLEAVED);
 
-  /* Signed 8-bit little-endian format */
+  /* Signed 16-bit little-endian format */
   snd_pcm_hw_params_set_format(handle, params,
-                              SND_PCM_FORMAT_S8);
+                              SND_PCM_FORMAT_S16);
 
-  /* One channel (monoral) */
-  snd_pcm_hw_params_set_channels(handle, params, 1);
+  /* Two channels (a hardware requirement) */
+  snd_pcm_hw_params_set_channels(handle, params, 2);
 
-  /* 8000 samples/second sampling rate (Telephone quality) */
+  /* 8000 samples/second rate (Telephone quality) */
   val = 8000;
+  dir = 0;                  /* set rate exactly */
   snd_pcm_hw_params_set_rate_near(handle, params,
                                   &val, &dir);
 
-  /* Set period size to the value of 'frames'. See
-   * NOTE: at the beginning of this file.
-   */
+  /* Set period size to the value of 'frames'. */
   snd_pcm_hw_params_set_period_size_near(handle,
                               params, &frames, &dir);
 
@@ -314,13 +325,21 @@ void InitALSA(void)
     exit(1);
   }
 
-  /* Use a buffer large enough to hold one period */
+  /*
+     Use a read buffer large enough to hold one period.
+     Get the actual period size in frames.
+   */
   snd_pcm_hw_params_get_period_size(params,
-                                      &frames, &dir);
-  size = frames * 1; /* 1 byte/sample, 1 channel */
-  buffer = (char *) malloc(size);
-}
+                                &frames, &dir);
 
+  /* Compute buffer size */
+  /* bytes/frame = 2 bytes/sample * 2 channels = 4 */
+  bytes_per_frame = 4;
+  bufferSize = frames * bytes_per_frame;
+
+  // Allocate the buffer
+  unIn.buffer = (char*)malloc(bufferSize);
+}
 
 void tonesInit()
 {
@@ -359,7 +378,6 @@ bool tonesPoll()
   int index;
   int numSamples;
   int i;
-  bool det_lo, det_hi;
 
   /*
    * Read and condition 'frames' blocks of samples until N_max
@@ -368,8 +386,8 @@ bool tonesPoll()
   index = 0;
   for( numSamples = 0; numSamples < N_max; numSamples += frames )
   {
-    /* Read a block of samples */
-    rc = snd_pcm_readi(handle, buffer, frames);
+    /* Read 'frames' interleaved frames */
+    rc = snd_pcm_readi(handle, unIn.buffer, frames);
 
     if (rc == -EPIPE)
     {
@@ -398,10 +416,13 @@ bool tonesPoll()
       return FALSE;
     }
 
-    /* Condition the data for the Goertzel algorithm */
+    /*
+     * Capture the samples from the "left" channel only.
+     * Scale them.
+     */
     for( i = 0; i < frames && index < N_max; i++ )
     {
-      testData[index++] = (SAMPLE)( (buffer[i] * 100)/256 + 100 );
+      testData[index++] = unIn.fPtr[i].lSample/32768.0;
     }
   }
 
@@ -442,14 +463,13 @@ bool tonesPoll()
   /*
    * For phones that send a time-limited "beep" when the *-key
    * is pressed...
-   * Require two or three consecutive detections of both tones
-   * twice (two *-key press detections) to declare an operator
-   * auto-blacklist entry request. Note: the number of detections
-   * may have to be adjusted depending on the speed of your
-   * processor and the duration of your phone's beep.
+   * Require two consecutive detections of both tones twice (two
+   * *-key press detections) to declare an operator auto-blacklist
+   * entry request. Note: the number of detections may have to be
+   * adjusted depending on the speed of your processor and the
+   * duration of your phone's beep tone.
    */
-  else if( ( numDetLoWas == 2 || numDetLoWas == 3 ) &&
-                 ( numDetHiWas == 2 || numDetHiWas == 3 ) )
+  else if( ( numDetLoWas == 2 ) && ( numDetHiWas == 2 ) )
   {
     if(numBeeps == 0)     // If first *-key press detection
     {
@@ -473,7 +493,7 @@ void tonesClose()
 {
   snd_pcm_drain(handle);
   snd_pcm_close(handle);
-  free(buffer);
+  free(unIn.buffer);
 }
 
 #if 0
@@ -489,7 +509,7 @@ int main()
 
   tonesInit();
 
-  while( blockNum < 1000 )
+  while( blockNum < 50 )
   {
     tonesPoll();
     blockNum++;

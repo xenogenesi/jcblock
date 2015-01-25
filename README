@@ -238,25 +238,6 @@
 	Then all calls not matched by records in the whitelist would be
 	terminated.
 
-        Country codes:
-
-	Note: Recent tests indicate that the USRobotics 5686G modem does
-	not now (or maybe never did) accept country codes. Specifically,
-	the "AT+GCI=B5\r" command returns ERROR. I don't remember where I
-	got the idea that it did -- I wrote the code a long time ago. I
-	also did not have a way to test it, since I don't have access to
-	a non-US phone system. I also have done a firmware upgrade since
-	then, so the facility may have been abandoned. I also don't know
-	what the codes accomplish: do they solve the caller ID compat-
-	ibility problem, etc.?
-
-	If you are in a non-US phone system, it presently appears that the
-	USRobotics USR805637 (or just USR5637) USB modem supports country
-	codes. Again, what they do is a mystery, but they may solve the
-	caller ID format problem described in README2. I have included a
-	list of country codes in file README2. They were listed in USR5637
-	online documentation.
-  
         Real-time prototype system:
 
         The photo shows a prototype jcblock system consisting of a

@@ -11,6 +11,8 @@
 	a USRobotics 5686G modem (as shown in the site photos) are
 	presented in file README.
 
+	NOTE: See the RECENT ACTIVITY section (below) for changes.
+
 	23 November 2014: Raspberry Pi System with TRENDnet modem
 	---------------------------------------------------------
 
@@ -94,6 +96,247 @@
 	The instructions for compiling and running the program are the
 	same as for the TFM system above.
 
+	22 January 2015: Raspberry Pi System with USR5686G modem
+	-------------------------------------------------------
+
+	Site photos show a Raspberry Pi Model B+ processor (~$35) with
+	a USRobotics 5686G modem (~$90) and a Cirrus Logic Audio Card
+	(a.k.a., Wolfson Audio Card+, ~$40). This system implements the
+	entire jcblock system. The audio card provides a microphone
+	(mic) interface to the RPi. Audio tones produced by pressing the
+	asterisk (*) key are detected by the mic and processed to place
+	an entry for the call in the blacklist (see the README file for
+	details). The mic on a Skulcandy INKD "ear buds" headset (Radio
+	Shack, ~$24) is used. The unit is housed in an inverted storage
+	box, which shields the RPi from static discharge (we have cats!),
+	concentrates modem speaker sound around the mic and shields the
+	mic from room noise.
+
+	Compilation:
+	There were enough program changes to the tones.c file to warrant
+	a separate file, tonesRPi.c, for the RPi version. So the tones.c
+	file in makejcblock should be replaced with tonesRPi.c. Also, make
+	sure the DO_TONES preprocessor define in jcblock.c is uncommented.
+	To compile this program libasound2-dev must be installed. To do
+	this the RPi must be connected to the Internet. Then run:
+		$sudo su
+		#apt-get update
+		#apt-get install libasound2-dev
+
+	The makejcblock script should then compile the program.
+
+	Audio Card:
+	The audio card is described at (one line URL):
+
+	http://www.element14.com/community/community/raspberry-pi/
+		raspberry-pi-accessories/cirrus_logic_audio_card
+
+	A User Manual may be downloaded. The card provides interfaces
+	to multiple audio devices. This project uses the analog headset
+	interface only. Device drivers for the card are not yet part
+	of the Raspian package, so they must be installed. The manual
+	indicates that there are two choices: 1) download and install
+	an entire Linux microSD card image (Method A), 2) install an
+	updated kernel containing the needed drivers (Method B). If
+	you have not yet installed Raspian, I would recommend Method
+	A, since you will then also find the "Use Case" configuration
+	scripts in directory /home/pi. These are not available using
+	Method B. The scripts are not strictly necessary for this
+	project, since I have copied (and modified) parts to start-up
+	script: startjcblock. The image may be installed on a microSD
+	card using the procedure described here (one line URL):
+
+	http://www.raspberrypi.org/documentation/installation/
+		installing-images/linux.md
+
+	Be careful with the 'dd' operation in this procedure! If
+	you choose to just install the drivers (Method B), You will not
+	need the Use Case scripts for this project, since script
+	startjcblock contains all that is needed. The manual describes
+	the Use Case scripts.
+
+	Image Configuration Tips:
+	If you install the Method A image on a microSD card, and install
+	it in an RPi, it should boot on a system with display (TV),
+	keyboard and mouse. If you are not in the UK one change you will
+	want to make immediately is to set the default keyboard. If
+	you start a LXTerminal and press the '#' key you see a British
+	pound (currency) symbol, edit /etc/default/keyboard and change
+	XKBLAOUT='gb' to indicate your locale (e.g., 'us' for the US).
+	I also changed the default editor by adding line:
+		export EDITOR=/usr/bin/vi (or your choice of editor)
+
+	to the end of the .bashrc file in /home/pi. Then reboot.
+
+	At this point you will probably want to make other configuration
+	changes:
+		$sudo su
+		#raspi-config
+	This will display the initial configuration menu that the Raspian
+	installation displays. The raspi-config utility presents menus
+	using an ncurses GUI. Some general rules for navigating the menus
+	are as follows: 1) to move up or down a menu list use the up/down
+	arrows, 2) to select an item, press the Enter key, 3) to toggle
+	an entry, use the Space bar, 4) to select an option at the bottom
+	of a menu, press the left or right arrows (some times multiple
+	times!), 5) to exit the utility, press the Esc key.
+
+	Under Advanced Options, you will want to activate SSH. This will
+	start its daemon so you can ssh in remotely. Make other changes
+	as you see fit.
+
+	Startup Script:
+	File startjcblock is available at the web site. This may be run
+	to start jcblock. It must be made executable:
+		$chmod +x startjcblock
+
+	The file starts with a (modified) version of the Use Case
+	Reset_paths.sh file. The second part is a (modified) version of
+	the Record_from_Headset.sh file. Among other operations it sets
+	the mic volume to 48 (max). The script then changes to the
+	directory of the jcblock program:
+		cd /home/pi/<yourPath>
+
+	You will need to substitute your path here. It then starts jcblock
+	running in the background (the &). It is important that it run in
+	the background so that the script can continue. The rest of the
+	script has to do with shutdown and will be discussed in the next
+	section.
+
+	It is convenient to have the startjcblock script run automatically
+	when the RPi boots. Normally scripts that must run at startup are
+	placed in /etc/init.d and soft links are made to them in
+	directories rcN.d, where N is the run level. These scripts run at
+	root level. But we would like our script to run at user level.
+	There is a feature of the cron utility, called @reboot, that will
+	do this.
+
+	When a RPi user uses the cron utility a file is created:
+	/var/spool/cron/crontabs/pi to hold the user commands.
+	The best way to edit this file is to run:
+		$crontab -e
+
+	The file will be opened using the RPi user's default editor. Enter
+	the following line at the end of the file:
+		@reboot /home/pi/<yourPath>/startjcblock &
+
+	WARNING! Don't forget the '&'! It causes the script to be run
+	in a forked off separate process -- so that the boot process
+	can continue. Without it the boot process will stall in the
+	script! If this happens to you, refer to section BOOT HANG
+	RECOVERY: below. There are other useful crontab options:
+	crontab -l lists entries; crontab -r removes entries. See its
+	man page for details.
+
+	Shutdown:
+	The lower part of the startjcblock script provides a way to
+	shut down the RPi (i.e., run: shutdown -h now) without having
+	to enter the command in a terminal window. It uses a package
+	called usbmount that automaticlly mounts a USB flash memory
+	stick on a fixed mount point when the stick is inserted. The
+	package is installed using:
+		#apt-get install usbmount
+
+	To confirm installation, enter:
+		#df -h
+
+	Then insert a USB flash memory stick (one with a vfat file
+	system on it) and enter the above command again. The drive
+	should appear mounted on /media/usb0. That insertion may be
+	used to initiate shutdown. The startjcblock script runs a while
+	loop that contains a test for directory shutdownDir on a flash
+	memory stick mounted on /media/usb0. If the directory is
+	present, the shutdown process is started. After the process is
+	started, wait for the RPi green LED (memory access) to stop
+	blinking before turning power off.
+
+	To make this work it is necessary to create directory
+	shutdownDir on a USB memory stick. With the stick mounted
+	enter:
+		$mkdir shutdownDir
+
+	I have found that usbmount will mount a memory stick that
+	contains a vfat file system (as originally formatted). I had
+	no luck getting sticks with other file systems to work. 
+	
+	With automatic startup and memory stick shutdown, the system may
+	be run "headless" -- that is, without display, keyboard or mouse.
+	Although unexpected power loss does not seem to cause damage, it
+	is prudent to run the system with a power source that it UPS
+	protected so that if power fails, there will be time to bring the
+	system down properly.  Note that for systems that do not contain
+	the audio card, the startjcblock script may be used if the audio
+	card configuration statements are removed.
+
+	Operation:
+	As indicated in the system photos, the mic needs to be mounted
+	in a fixed location above the modem speaker. There is a volume
+	control on the left side of the unit. I have mine set at half
+	volume. You may need to coordinate the mount position and this
+	setting with the THRESHOLD value in the tonesRPi.c file to get
+	acceptable detection results.
+
+	-------------------------For all systems ----------------------
+
+	ETHERNET SETUP:
+
+	I did most of my work with the RPi disconnected from the TV
+	and, instead, accessed over an Ethernet connection using ssh.
+	To set up the connection I edited file /etc/network/interfaces.
+	Since I prefer to use static connections for wired links I
+	commented out line: 'iface eth0 inet dhcp' and added the
+	following lines at the end of the file:
+		iface eth0 inet static
+		address 192.168.0.17
+		netmask 255.255.255.0
+		gateway 192.168.0.1
+
+	where the address was a free static address available from my
+	router and the router gateway address is 192.168.0.1. Then on
+	my desktop workstation I added the following line to file
+	/etc/hosts:
+		192.168.0.17    raspi
+
+	After rebooting, I could then log into the RPi using:
+		$ssh pi@raspi
+
+	The RPi asks for the password (by default: raspberry). If you
+	want to have a secure connection (and not have to enter a
+	password), and you have an RSA public key in your
+	.ssh/id_rsa.pub file, you can copy and paste it into file
+	.ssh/authorized_keys on the RPI (you will have to create
+	directory /home/pi/.ssh first). If you don't yet have keys in
+	your workstation .ssh directory you can generate them with
+	command ssh-keygen (see the man page or an online tutorial).
+
+	It is convenient to be able to run an X11 client on the RPi
+	and have it displayed by the X11 server on your workstation.
+	To do this the RPi file /etc/ssh/sshd_config must contain
+	these lines:
+		X11Forwarding yes
+		X11DisplayOffset 10
+
+	After rebooting, you should be able to remotely log in with:
+		ssh -X pi@raspi
+	and run X11 clients.
+
+	At this point you should be able to transfer files to the
+	RPi with:
+		$scp <filename> pi@raspi:/home/pi
+
+	and from the RPi with:
+		$scp pi@raspi:/home/pi/<filename> .
+
+
+        BOOT HANG RECOVERY:
+
+	As indicated above, it is possible to hang the boot sequence if
+	the startjcblock script is not constructed and called properly.
+	If this happens, the only solution is to remove the SD card and
+	mount it on another computer where corrections can be made. A
+	USB card reader is needed. Once the card is mounted, all files
+	will be accessible and you will be able to make corrections.
+
 	COUNTRY CODES:
 
 	Some modems require a country code that is specific for the
@@ -125,10 +368,22 @@
 	
 	FUTURE:	
 
-	An audio adapter board for the B+ version is supposed to be out
-	soon. It will have a microphone input. This will be used to
-	implement the tones feature. A seven inch touch screen is also
-	promised. This may be used to provide a GUI (for editing the .dat
-	files, etc.).
+	A seven inch touch screen is promised. It may be useful to provide
+	a GUI (for editing the .dat files, etc.). Otherwise the files may
+	be managed using the FireFTP Firefox extension (see the README
+	file and this project's web page at its SourceForge site).
 
+	RECENT ACTIVITY:
+
+	01 December, 2014: Way to make the TFM_561U send the fax tone.
+	--------------------------------------------------------------
+
+	If you uncomment define DO_FAX_TONE and replace statement:
+		send_modem_command(fd,"AT+FCLASS=2.0\r");
+	with
+		send_modem_command(fd,"AT+FCLASS=0\r");
+
+	the modem will send the fax tone (the caller will hear it).
+	I don't know why! This is just something I stumbled onto.
+	This does not work for the USR5637 modem.
 
