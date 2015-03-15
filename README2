@@ -262,7 +262,7 @@
 	With automatic startup and memory stick shutdown, the system may
 	be run "headless" -- that is, without display, keyboard or mouse.
 	Although unexpected power loss does not seem to cause damage, it
-	is prudent to run the system with a power source that it UPS
+	is prudent to run the system with a power source that is UPS
 	protected so that if power fails, there will be time to bring the
 	system down properly.  Note that for systems that do not contain
 	the audio card, the startjcblock script may be used if the audio
@@ -366,12 +366,6 @@
 	experience of one user in Italy is that it did not solve the
 	caller ID format problem for his TFM system.
 	
-	FUTURE:	
-
-	A seven inch touch screen is promised. It may be useful to provide
-	a GUI (for editing the .dat files, etc.). Otherwise the files may
-	be managed using the FireFTP Firefox extension (see the README
-	file and this project's web page at its SourceForge site).
 
 	RECENT ACTIVITY:
 
@@ -386,4 +380,37 @@
 	the modem will send the fax tone (the caller will hear it).
 	I don't know why! This is just something I stumbled onto.
 	This does not work for the USR5637 modem.
+
+	13 March, 2015: jcblock.c correction; THRESHOLD change.
+	-------------------------------------------------------
+
+	If you are not using the *-key feature (DO_TONES is disabled),
+	this change does not affect you. Occasionally on the full 
+	function (USR5686G modem) system the first "off hook" command:
+
+		send_modem_command(fd, "ATH1\r"); // off hook
+	returns:
+		did not get command OK
+
+	I have added a quarter-second delay after the preceeding
+	open_port() call:
+		open_port( OPEN_PORT_BLOCKED );
+      		usleep( 250000 );         // quarter second	
+
+	I "think" this will solve the problem, but can't be sure until
+	I get sufficient calls. Since this could take a month or two
+	(we only get 0-2 junk calls/day now), I thought I would submit
+	the change in case others are seeing the same symptom. The
+	program runs fine without the fix on the ebox system. Since the
+	RPi is faster and the two systems are using the same modem, I am
+	speculating that it is a timing problem. If I find out otherwise
+	I will submit a correction.
+
+	Recently I also changed the value of THRESHOLD in tonesRPi.c
+	from 0.5 to 1.5 on my system. As noted earlier, this is a
+	"tuning" parameter and its best value depends on the hardware
+	configuration of your mic, modem speaker volume, enclosure,
+	etc. You will need to adjust it for your own system. As a
+	consequence I am not submitting a tonesRPI.c file change.
+ 
 

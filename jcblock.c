@@ -583,6 +583,7 @@ int wait_for_response(fd)
       close(fd);
       usleep( 250000 );		// quarter second
       open_port( OPEN_PORT_BLOCKED );
+      usleep( 250000 );         // quarter second
 
 #ifdef ANS_MACHINE
       // If the call is answered after two or three rings, poll for

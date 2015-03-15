@@ -118,7 +118,7 @@ static union {
 #define TARGET_FREQ_HI         1209.0           //1209 Hz
 #define N_HI                    410             //1209 Hz block size
 
-#define THRESHOLD               0.5
+#define THRESHOLD               1.5
 
 #define DET_MIN                  10
 
