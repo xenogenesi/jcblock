@@ -413,4 +413,34 @@
 	etc. You will need to adjust it for your own system. As a
 	consequence I am not submitting a tonesRPI.c file change.
  
+	14 April, 2015: jcblock runs on a Mac; general cleanup.
+	-------------------------------------------------------
+
+	A user reported that he has jcblock running on a Mac. He
+	compiled it using a C99 compiler (ISO 9899:1999) and it ran
+	immediately. The only difficulty was in determining the serial
+	port:
+		./jcblock -p /dev/tty.usbmodem24680241
+
+	This is a version with the *-key feature disabled (DO_TONES is
+	commented out). The *-key feature requires the libasound ALSA
+	(Advanced Linux Sound Architecture) library, which (probably)
+	is not available on the Mac.
+
+	He also mentioned that the compiler spit out some non-fatal
+	warnings, so I decided to check the posted files for them.
+	I did this by adding option -Wall to the gcc command in file
+	makejcblock. Files jcblock.c, truncate.c, tones.c tonesRPi.c
+	required changes. I have uploaded these corrected files. No
+	functional change in program operation was involved, so you
+	may wish to ignore these changes.
+
+	Another user has ported jcblock to the Python language.
+
+	The above (13 March, 2015) addition of:
+
+		usleep( 250000 );         // quarter second
+
+	seems to have fixed that problem, so it is now part of the
+	posted tonesRPi.c file.
 

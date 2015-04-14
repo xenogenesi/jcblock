@@ -214,7 +214,6 @@ bool ProcessToneSamples(int N, FLOATING sine,
   FLOATING magnitude;
   FLOATING magnitudeSquared;
   int index;
-  bool detection = FALSE;
 
   /* Process the samples */
   ResetGoertzel();
@@ -248,14 +247,14 @@ bool ProcessToneSamples(int N, FLOATING sine,
   if( magnitude > THRESHOLD )
   {
 #ifdef DEBUG
-    printf("detection=TRUE\n");
+    printf("detection is TRUE\n");
 #endif
     return TRUE;
   }
   else
   {
 #ifdef DEBUG
-    printf("detection=FALSE\n");
+    printf("detection is FALSE\n");
 #endif
     return FALSE;
   }

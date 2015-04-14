@@ -110,6 +110,7 @@ static int numRings;
 static void cleanup( int signo );
 
 // Prototypes
+int wait_for_response(int fd);
 int send_modem_command(int fd, char *command );
 int send_timed_modem_command(int fd, char *command, int numSecs );
 static bool check_blacklist( char *callstr );
@@ -168,7 +169,7 @@ int main(int argc, char **argv)
   if( (fpCa = fopen( "./callerID.dat", "a+" ) ) == NULL )
   {
     printf("fopen() of callerID.dat failed\n");
-    return;
+    return(-1);
   }
 
   // Open the whitelist file (for reading & writing)
@@ -181,7 +182,7 @@ int main(int argc, char **argv)
   if( (fpBl = fopen( "./blacklist.dat", "r+" ) ) == NULL )
   {
     printf("fopen() of blacklist.dat failed. A blacklist must exist.\n" );
-    return;
+    return(-1);
   }
   // Open the serial port
   open_port( OPEN_PORT_BLOCKED );
@@ -199,7 +200,7 @@ int main(int argc, char **argv)
 #endif
     fflush(stdout);
     sync();
-    return;
+    return(0);
   }
 
 modemInitialized = TRUE;
@@ -218,6 +219,7 @@ modemInitialized = TRUE;
 #endif
   fflush(stdout);
   sync();
+  return(0);
 }
 
 //
@@ -296,7 +298,6 @@ int send_modem_command(int fd, char *command )
   char *bufptr;         // Current char in buffer
   int nbytes;           // Number of bytes read
   int tries;            // Number of tries so far
-  int i;
 
   // Send an AT command followed by a CR
   if( write(fd, command, strlen(command) ) != strlen(command) )
@@ -733,7 +734,6 @@ static bool check_whitelist( char *callstr )
   char call_date[10];
   char *dateptr;
   char *strptr;
-  int i;
   long file_pos_last, file_pos_next;
 
   // Close and re-open the whitelist.dat file. Note: this
@@ -758,7 +758,7 @@ static bool check_whitelist( char *callstr )
   fseek( fpWh, 0, SEEK_SET );
 
   // Save the file's current access location
-  if( file_pos_next = ftell( fpWh ) == -1L )
+  if( (file_pos_next = ftell( fpWh )) == -1L )
   {
     printf("ftell(fpWh) failed\n");
     return(TRUE);           // accept the call
@@ -883,9 +883,7 @@ static bool check_blacklist( char *callstr )
   char call_date[10];
   char *dateptr;
   char *strptr;
-  int i;
   long file_pos_last, file_pos_next;
-  char yearStr[10];
 
   // Close and re-open the blacklist.dat file. Note: this
   // seems to be necessary to be able to write records
@@ -909,7 +907,7 @@ static bool check_blacklist( char *callstr )
   fseek( fpBl, 0, SEEK_SET );
 
   // Save the file's current access location
-  if( file_pos_next = ftell( fpBl ) == -1L )
+  if( (file_pos_next = ftell( fpBl )) == -1L )
   {
     printf("ftell(fpBl) failed\n");
     return(FALSE);
@@ -1084,14 +1082,12 @@ static bool check_blacklist( char *callstr )
 //
 bool write_blacklist( char *callstr )
 {
-  char blackbuf[100];
   char blacklistEntry[80];
   char readbuf[10];
   char *srcDesc = "*-KEY ENTRY";
   char *nameStr, *nmbrStr, *nmbrStrEnd;
   int nameStrLength, nmbrStrLength;
   int i;
-  char yearStr[10];
 
   // Close and re-open the blacklist.dat file. Note: this
   // seems to be necessary to be able to write records

@@ -207,7 +207,6 @@ bool ProcessToneSamples(int N, FLOATING sine,
   FLOATING magnitude;
   FLOATING magnitudeSquared;
   int index;
-  bool detection = FALSE;
 
   /* Process the samples */
   ResetGoertzel();
@@ -241,14 +240,14 @@ bool ProcessToneSamples(int N, FLOATING sine,
   if( magnitude > THRESHOLD )
   {
 #ifdef DEBUG
-    printf("detection=TRUE\n");
+    printf("detection is TRUE\n");
 #endif
     return TRUE;
   }
   else
   {
 #ifdef DEBUG
-    printf("detection=FALSE\n");
+    printf("detection is FALSE\n");
 #endif
     return FALSE;
   }
@@ -259,7 +258,6 @@ bool ProcessToneSamples(int N, FLOATING sine,
  */
 void InitALSA(void)
 {
-  long loops;
   int size;
   snd_pcm_hw_params_t *params;
   unsigned int val;
@@ -359,7 +357,6 @@ bool tonesPoll()
   int index;
   int numSamples;
   int i;
-  bool det_lo, det_hi;
 
   /*
    * Read and condition 'frames' blocks of samples until N_max

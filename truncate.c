@@ -34,7 +34,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
-
+#include <stdlib.h>
 #include "common.h"
 
 #define CHECK_SECS    30*24*60*60       // seconds in thirty days
@@ -48,10 +48,7 @@ static char blacklistBuf[100];
 static char month[3], day[3], year[3];
 static int imonth, iday, iyear;
 static int numRecsWritten;
-static struct tm *tmPtr;
 static struct tm tmStruct;
-static int currentYear, currentMonth;
-static int recordYear;
 static int tm_isdst_saved;
 
 //
