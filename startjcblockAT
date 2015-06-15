@@ -1,0 +1,31 @@
+#!/bin/bash
+#
+#	jcblockAT program startup script for the Raspberry Pi
+#
+#	Run this script in the background:
+#		startjcblockAT &
+#
+#
+echo -e "Starting jcblockAT...\n"
+cd /home/pi/<yourPath>    # Substitute your path to jcblockAT
+./jcblockAT &
+jcblockATPID=$!           # Save the forked jcblockAT process ID 
+
+# Poll for flash USB memory stick insertion to initiate shutdown.
+# Note: usbmount must be installed for this to work. To install,
+# run: sudo apt-get update. Then: sudo apt-get install usbmount
+testbool=1
+while [ $testbool -eq 1 ]
+  do
+    # Test for shutdwonDir directory presence.
+    if [ -d /media/usb0/shutdownDir ]
+      then
+        testbool=0    # only do this once...
+        echo "Starting shutdown..."
+        kill -s SIGINT $jcblockATPID # Send ctrl-C to jcblockAT
+        sudo shutdown -h now
+      else
+        sleep 5
+    fi
+  done
+

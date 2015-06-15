@@ -276,6 +276,55 @@
 	setting with the THRESHOLD value in the tonesRPi.c file to get
 	acceptable detection results.
 
+	09 June, 2015: Raspberry Pi System with ATian Voice/FAX Modem
+	-------------------------------------------------------------
+
+	The ATian modem (~$14, Amazon.com, made in China) implements all
+	hardware functions needed by the program, including touchtone
+	detection. Therefore all features of the program are available with
+	this modem. The touchtone function is used to detect a *-key press.
+	When the program is in the *-key detection window, pressing the
+	key causes a record for the call to be automatically written to
+	the blacklist. The window opens when the listener hears some
+	"clicks". The listener then has ten seconds to press the *-key.
+	If the key is not pressed, some additional "clicks" are heard
+	when the window closes. The window opens about seven seconds after
+	the last received ring.
+
+	Since this modem required a fair number of program changes, a
+	separate source file was written. The new files needed for this
+	program are: jcblockAT.c, makejcblockAT and startjcblockAT. The
+	program uses POSIX threads (pthreads). A gcc compile option
+	-pthread is required in the makejcblockAT file. The pthread
+	library is available by default on the RPi.
+
+	The modem:
+	The ATian modem comes with no documentation! Since it is a voice
+	modem, some voice AT commands were needed to activate the touchtone
+	feature. I was able to find a Cisco document containing AT voice
+	commands that was sufficient at (a one-line URL):
+
+		http://www.cisco.com/c/en/us/td/docs/routers/access/modem/
+			AT/wic/command/reference/atwic/atwic6.html
+
+	Not all the commands in the document work. The ones used in the
+	program are described in the document. You can experiment with AT
+	commands using miniterm.py. See an entry under the Documentation
+	menu of this site for details.
+
+	Startup/Shutdown:
+	You may want to use startjcblockAT to start and shutdown jcblockAT.
+	See the writeups above under: Startup Script: and Shutdown: for the
+	similar script: startjcblock.
+
+	Platform:
+	I am running the program on a Raspberry Pi Model B+ processor. But
+	I developed and ran it on my Dell desktop. No changes were required
+	to run it on the RPi, so it will probably run on other RPi models
+	without changes. At most maybe some of the usleep() delays will
+	need to be adjusted. Keep in mind that we are using a modem in an
+	application for which it was not designed.
+
 	-------------------------For all systems ----------------------
 
 	ETHERNET SETUP:
@@ -443,4 +492,10 @@
 
 	seems to have fixed that problem, so it is now part of the
 	posted tonesRPi.c file.
+
+	09 June, 2015: jcblock version for ATian voice/FAX modem.
+	---------------------------------------------------------
+
+	Submitted a separate version (jcblockAT.c) for the ATian
+	modem. See the write-up above.
 
