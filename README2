@@ -499,3 +499,10 @@
 	Submitted a separate version (jcblockAT.c) for the ATian
 	modem. See the write-up above.
 
+	25 June, 2015: Corrected/revised jcblockAT.c
+	--------------------------------------------
+
+	If you are running jcblockAT, you should definitely download
+	the current site version of jcblockAT.c. I made numerous
+	corrections/updates.
+

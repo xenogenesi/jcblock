@@ -1,5 +1,5 @@
 /*
- *	Program name: jcblockAT
+ *	Program name: jcblock
  *
  *	File name: jcblockAT.c
  *
@@ -93,7 +93,7 @@ static struct termios options;
 static time_t pollTime, pollStartTime;
 static bool modemInitialized = FALSE;
 static bool inBlockedReadCall = FALSE;
-static int numRings;
+static int numRings = 0;
 pthread_t threadId;
 bool gotStarKey = FALSE;
 
@@ -380,23 +380,27 @@ int wait_for_response(fd)
     printf("nbytes: %d, str: %s", nbytes, buffer );
 #endif
 
-    // A string was received. If its a 'RING' string, just ignore it.
+    // A string was received.
+    // If its a 'RING' string, just count it.
     if( strstr( buffer, "RING" ) != NULL )
     {
+      // On US-compatible phone systems caller ID data is
+      // received after the first ring. In England caller ID
+      // comes in BEFORE the first ring. Make code adjustments
+      // as necessary for your phone system.
+      numRings = 1;                // count the ring
       continue;
     }
 
-    // Ignore a string "AT+VCID=1" returned from the modem.
-    if( strncmp( buffer, "AT+VCID=1", 9 ) == 0 )
+    // Ignore any received string that isn't a caller ID string.
+    // Caller ID strings always contain a 'DATE' field.
+    if( strstr( buffer, "DATE" ) == NULL )
     {
-      continue;
+      continue;                   // If 'DATE' is not present...
     }
-
-    // Caller ID data was received after the first ring.
-    numRings = 1;
 
     // A caller ID string was constructed.
-    // 
+
     // The DATE field does not contain the year. Compute the year
     // and insert it.
     if( time( &currentTime ) == -1 )
@@ -509,6 +513,12 @@ int wait_for_response(fd)
         usleep( 100000 );        // 100 msec
       }
 
+      // Reinitialize the serial port blocked
+      close(fd);
+      usleep( 250000 );         // quarter second
+      open_port( OPEN_PORT_BLOCKED );
+      usleep( 250000 );         // quarter second
+
 #ifdef ANS_MACHINE
       // If the call is answered before four rings, block for a
       // touchtone star (*) key press. Note that if an answering
@@ -527,12 +537,6 @@ int wait_for_response(fd)
       if( TRUE)
       {
 #endif
-        // Reinitialize the serial port blocked
-        close(fd);
-        usleep( 250000 );         // quarter second
-        open_port( OPEN_PORT_BLOCKED );
-        usleep( 250000 );         // quarter second
-
         // The following modem commands will cause "clicks"
         // to be heard on the phone. They signal the listener
         // that the *-key detection window is open. The listner
@@ -595,7 +599,6 @@ int wait_for_response(fd)
         while( (pollTime = time( NULL )) < pollStartTime + 10 )
         {
           if( gotStarKey == TRUE ) {
-            gotStarKey = FALSE;
             break;                 // break if *-key was detected
           }
 
@@ -609,20 +612,18 @@ int wait_for_response(fd)
           continue;
         }
 
-        // If poll time expired, send on/off hook commands.
-        // These cause "clicks" to the listener signaling that
-        // the detection window has closed. These clicks
-        // are not sent if a *-key is detected.
+        // If *-key window poll time expired...
         if(pollTime >= pollStartTime + 10 )
         {
-          send_modem_command(fd, "ATH0\r"); // on hook
-          send_modem_command(fd, "ATH1\r"); // off hook
-
           // Tag and write the call record to the callerID.dat file.
           // (tag '-' just overwrites the existing same char).
           tag_and_write_callerID_record( buffer2, '-');
         }
-        else {
+
+        // If a *-key entry was detected...
+        else if(gotStarKey)
+        {
+          gotStarKey = FALSE;
           // Write a caller ID entry to the blacklist.dat.
           if( write_blacklist( buffer2 ) == TRUE)
           {
@@ -633,7 +634,13 @@ int wait_for_response(fd)
 
         // Reinitialize the modem for caller ID operation
         init_modem( fd );
-        continue;
+
+        // Send on/off/on hook commands to terminate call
+        // and send some "clicks" to the listener to indicate
+        // that the *-key window has closed.
+        send_modem_command(fd, "ATH0\r"); // on hook
+        send_modem_command(fd, "ATH1\r"); // off hook
+        send_modem_command(fd, "ATH0\r"); // on hook
       }
     }                           // end of *-key check
 
